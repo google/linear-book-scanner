@@ -1,0 +1,6 @@
+Dependencies
+
+python-tk
+python-imaging-tk
+python-imaging
+python-numeric

@@ -1,0 +1,33 @@
+#!/bin/bash
+
+src() {
+  TIMEFORMAT=$'real\t%3lR\tuser\t%3lU\tsys\t%3lS'
+
+  time convert -density 300 testdata/stripes.png ppm:- |\
+    pnmdepth 255 | tee /tmp/before
+}
+
+echo -ne "No-op\t"
+src > /dev/null
+
+echo -ne "No-op\t"
+src > /dev/null
+
+echo -ne "Detect\t"
+src  | ./detect.py > /tmp/after
+
+echo -ne "Viewer\t"
+src  | ./viewer.py > /tmp/after
+
+echo -ne "Phase\t"
+src  | ./phase.py > /tmp/after
+
+echo -ne "Wobble\t"
+src  | ./wobble.py > /tmp/after
+
+
+
+
+
+
+
