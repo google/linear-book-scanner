@@ -19,14 +19,14 @@ import sys
 from ppm_header import ppm_header
 
 def insert_pagefeed(linesize):
-  sys.stderr.write("Pagefeed created\n")  
+  # sys.stderr.write("Pagefeed created\n")  
   sys.stdout.write("Pagefeed")
   for i in range(linesize - 8):
     sys.stdout.write(" ")
 
 def detect_pagefeed(scanline):
   if scanline[0:8] == "Pagefeed":
-    sys.stderr.write("Pagefeed detected\n")  
+    # sys.stderr.write("Pagefeed detected\n")  
     return True
   else:
     return False
@@ -35,7 +35,7 @@ def detect_pagefeed(scanline):
 def write_ppm(page_number, scanlines):
   w = len(scanlines[0]) / 3
   h = len(scanlines)
-  if h < w/5:
+  if h < w/4:   # About two inches
     return False
   kDir = "/tmp/playground" 
   if not os.path.exists(kDir):

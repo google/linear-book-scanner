@@ -25,14 +25,14 @@ def extent_of_stripes(scanline):
   return n
 
 def detect_stripes(scanline):
-  """Are we on the barber stripe or not?"""
+  """Are we on the fiducial stripe or not?"""
   n = extent_of_stripes(scanline)
   roi = scanline[:n]
-  kDarkThreshold = 80
-  kLightThreshold = 100
+  kThreshold = 15
   a = numpy.fromstring(roi, dtype=numpy.uint8)
-  black = len(numpy.where(a < kDarkThreshold)[0])
-  white = len(numpy.where(a > kLightThreshold)[0])
+  avg = numpy.average(a)
+  black = len(numpy.where(a < avg - kThreshold)[0])
+  white = len(numpy.where(a > avg + kThreshold)[0])
   balance = abs(black - white) / float(len(roi))
   coverage = (black + white) / float(len(roi))
   if balance < 0.35:

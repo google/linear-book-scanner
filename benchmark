@@ -1,10 +1,13 @@
 #!/bin/bash
 
-src() {
-  TIMEFORMAT=$'real\t%3lR\tuser\t%3lU\tsys\t%3lS'
+TIMEFORMAT=$'real\t%3lR\tuser\t%3lU\tsys\t%3lS'
+BEFORE=/dev/null
+AFTER=/dev/null
 
+
+src() {
   time convert -density 300 testdata/stripes.png ppm:- |\
-    pnmdepth 255 | tee /tmp/before
+    pnmdepth 255 | tee $BEFORE
 }
 
 echo -ne "No-op\t"
@@ -14,17 +17,22 @@ echo -ne "No-op\t"
 src > /dev/null
 
 echo -ne "Detect\t"
-src  | ./detect.py > /tmp/after
+src  | ./detect.py > $AFTER
 
 echo -ne "Viewer\t"
-src  | ./viewer.py > /tmp/after
+src  | ./viewer.py > $AFTER
 
 echo -ne "Phase\t"
-src  | ./phase.py > /tmp/after
+src  | ./phase.py > $AFTER
+
+echo -ne "Split\t"
+src  | ./split.py > $AFTER
 
 echo -ne "Wobble\t"
-src  | ./wobble.py > /tmp/after
+src  | ./wobble.py > $AFTER
 
+echo -ne "ALL\t"
+src | ./wobble.py | ./viewer.py | ./split.py > $AFTER
 
 
 
