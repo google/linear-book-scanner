@@ -33,7 +33,7 @@ def calculate_prony_matrix(period,t):
   Vit = numpy.linalg.pinv(V)
   return Vit
 
-def find_phase_prony(scanline, Vit=[]):
+def find_phase(scanline, Vit=[]):
   '''Estimates wave phase using Prony's method. Vit is the
   pseudo-inverse of the Van der Monde matrix that contains the
   component waves, complex-exponential harmonics.'''
@@ -57,10 +57,6 @@ def find_phase_prony(scanline, Vit=[]):
 
   delta = phi * period/(2*numpy.pi)
   return delta, period
-
-def find_phase(scanline):
-  return find_phase_prony(scanline)
-
 
 if __name__ == "__main__":
   linesize, linecount = ppm_header()

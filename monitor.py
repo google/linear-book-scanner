@@ -36,6 +36,7 @@ def latest(dir):
     return flist[-1]
 
 def process():
+  """View most recent image file at all times."""
   kDir = "/tmp/playground/*.ppm"
   w = 500
   h = 700

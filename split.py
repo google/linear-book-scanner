@@ -19,23 +19,23 @@ import sys
 from ppm_header import ppm_header
 
 def insert_pagefeed(linesize):
-  # sys.stderr.write("Pagefeed created\n")  
+  """Add a page feed to the image stream."""
   sys.stdout.write("Pagefeed")
   for i in range(linesize - 8):
     sys.stdout.write(" ")
 
 def detect_pagefeed(scanline):
+  """Notice a page feed in the image stream."""
   if scanline[0:8] == "Pagefeed":
-    # sys.stderr.write("Pagefeed detected\n")  
     return True
   else:
     return False
 
-
 def write_ppm(page_number, scanlines):
+  """Write out a single page image to the playground."""
   w = len(scanlines[0]) / 3
   h = len(scanlines)
-  if h < w/4:   # About two inches
+  if h < w/4:   # A little bit over two inches
     return False
   kDir = "/tmp/playground" 
   if not os.path.exists(kDir):
@@ -49,6 +49,7 @@ def write_ppm(page_number, scanlines):
   return True
 
 def process():
+  """Split up the image stream into separate pages, and store them."""
   linesize, linecount = ppm_header()
   page_number = 0
   scanlines = []

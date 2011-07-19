@@ -24,9 +24,9 @@ from phase import find_phase
 from detect import detect_stripes
 from split import insert_pagefeed
 
-# Alpha blend two scanlines. Takes two scanlines and their edges, and
-# returns an interpolated scanline with the edge where we want it.
 def interpolate(scanline, scanline_2, edge, edge_2, target):
+  """Alpha blend two scanlines. Takes two scanlines and their edges, and
+  returns an interpolated scanline with the edge where we want it."""
   if edge == edge_2:
     alpha = 1
   else:
@@ -38,13 +38,14 @@ def interpolate(scanline, scanline_2, edge, edge_2, target):
   return c.tostring()
 
 def has_wrapped(prev_phase, phase, period):
+  """Have the phase wrapped around?"""
   if prev_phase - phase > period / 2:  # Nyquist
     return True
   else:
     return False
 
-# Straighten entire page of book.
 def straighten(prev_scanline):
+  """Straighten an entire book page"""
   linesize = len(prev_scanline)
   w = linesize // 3
   prev_phase, period = find_phase(prev_scanline)
@@ -76,8 +77,8 @@ def straighten(prev_scanline):
     return
   insert_pagefeed(linesize)
 
-# Dewobble the entire image coming from standard input.
 def process():
+  """Dewobble the entire image coming from standard input."""
   linesize, linecount = ppm_header()
   while True:
     scanline = sys.stdin.read(linesize)
