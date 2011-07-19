@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# Run the scan bars
+
+scan() {
+  local SCANNERS=$(scanimage -L)
+  if [ $(echo "$SCANNERS" | wc -l) != 2 ]; 
+  then
+    echo "Error. I need two scanbars to proceed, and all I have is:"
+    echo "$SCANNERS"
+    exit 1
+  fi
+
+  local S1=$(echo "$SCANNERS" | head -1 | cut -f2 -d'`' | cut -f1 -d"'")
+  local S2=$(echo "$SCANNERS" | tail -1 | cut -f2 -d'`' | cut -f1 -d"'")
+
+  scanimage -d $S1 -y 111 --mode=color | tee /tmp/debug-1 \
+    ./wobble.py | ./viewer.py 8 | ./split.py > /dev/null &
+
+  scanimage -d $S2 -y 111 --mode=color | tee /tmp/debug-2 \
+    ./wobble.py | ./viewer.py 8 | ./split.py 1 > /dev/null &
+}
+
+scan
+wait
+

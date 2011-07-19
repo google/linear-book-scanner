@@ -13,9 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
-# Jeff Breidenbach
-# View an image as it passes from stdin to stdout
 
 import sys
 import Tkinter
@@ -24,6 +21,7 @@ from ppm_header import ppm_header
 from split import detect_pagefeed
 
 def walk_through_lines(linesize, ratio):
+  """Throw out several scan lines for each one that we keep."""
   for unused in range(ratio):
     scanline = sys.stdin.read(linesize)
     if len(scanline) != linesize:
@@ -34,6 +32,8 @@ def walk_through_lines(linesize, ratio):
   return scanline
 
 def process(ratio):
+  """View an image as it passes from stdin to stdout. Downsize by ratio
+  so that it can fit on a computer screen."""
   n = 0
   y = 0
   h = 800
