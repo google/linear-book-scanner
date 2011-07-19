@@ -18,3 +18,21 @@ enscript --indent=10 --fancy-header --highlight=python \
   --media=tabloid --portrait --nup=2 --color=1 --nup-xpad=72 \
   --nup-ypad=72 --style=emacs --underlay="Cheese" *.py -p foo.ps
 
+
+Warning: this patch will destroy an unmodified device.
+
++++ genesys.c	2011-07-03 00:31:29.000000000 -0700
+@@ -5746,6 +5746,12 @@
+     }
+ 
+   s->params.lines = ((br_y - tl_y) * s->dev->settings.yres) / MM_PER_INCH;
++
++  /* HACK. Max out 20 bit hardware register. */
++  if (br_y == 111) {
++    s->params.lines = (2 << 20 - 1) / 3;
++  }
++
+   s->params.pixels_per_line =
+     ((br_x - tl_x) * resolution) / MM_PER_INCH;
+ 
+

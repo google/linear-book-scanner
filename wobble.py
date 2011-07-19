@@ -39,7 +39,7 @@ def interpolate(scanline, scanline_2, edge, edge_2, target):
 
 def has_wrapped(prev_phase, phase, period):
   """Have the phase wrapped around?"""
-  if prev_phase - phase > period / 2:  # Nyquist
+  if prev_phase - phase > period * 0.7:
     return True
   else:
     return False
