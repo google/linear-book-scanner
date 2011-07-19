@@ -14,10 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import collections
-import math
+
 import sys
-import struct
 import os
 import numpy
 from PIL import Image
@@ -40,9 +38,7 @@ def interpolate(scanline, scanline_2, edge, edge_2, target):
   return c.tostring()
 
 def has_wrapped(prev_phase, phase, period):
-  kSafetyMargin = .20
-  kThreshold = period * (1 - kSafetyMargin)
-  if phase + kThreshold < prev_phase:
+  if prev_phase - phase > period / 2:  # Nyquist
     return True
   else:
     return False

@@ -1,38 +1,43 @@
 #!/bin/bash
 
-TIMEFORMAT=$'real\t%3lR\tuser\t%3lU\tsys\t%3lS'
+TIMEFORMAT=$'  real %3lR    user %3lU    sys\t%3lS'
 BEFORE=/dev/null
 AFTER=/dev/null
 
-
-src() {
-  time convert -density 300 testdata/stripes.png ppm:- |\
-    pnmdepth 255 | tee $BEFORE
+src1() {
+  pngtopnm testdata/stripes.png | pnmdepth 255
 }
 
-echo -ne "No-op\t"
-src > /dev/null
+src2() {
+  jpegtopnm testdata/code.jpg 2> /dev/null | pnmdepth 255 | pgmtoppm white
+}
 
-echo -ne "No-op\t"
-src > /dev/null
+exercise() {
+  time src1 | tee $BEFORE | eval $1 > $AFTER
+  time src2 | tee $BEFORE | eval $1 > $AFTER
+}
 
-echo -ne "Detect\t"
-src  | ./detect.py > $AFTER
+echo "No-op"
+exercise cat
 
-echo -ne "Viewer\t"
-src  | ./viewer.py > $AFTER
+echo "Detect"
+exercise ./detect.py
 
-echo -ne "Phase\t"
-src  | ./phase.py > $AFTER
+echo "Viewer"
+exercise ./viewer.py
 
-echo -ne "Split\t"
-src  | ./split.py > $AFTER
+echo "Phase"
+exercise ./phase.py 
 
-echo -ne "Wobble\t"
-src  | ./wobble.py > $AFTER
+echo "Split"
+exercise ./split.py
 
-echo -ne "ALL\t"
-src | ./wobble.py | ./viewer.py | ./split.py > $AFTER
+echo "Wobble"
+exercise ./wobble.py
+
+echo "ALL"
+exercise "./wobble.py | ./viewer.py | ./split.py"
+
 
 
 

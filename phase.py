@@ -33,14 +33,6 @@ def calculate_prony_matrix(period,t):
   Vit = numpy.linalg.pinv(V)
   return Vit
 
-def find_phase_totally_braindead(scanline):
-  b = numpy.fromstring(scanline, dtype=numpy.uint8) # convert to numpy
-  d = b[201:300:3]   # pick the green pixels
-  e = numpy.diff(d.astype('int32')) # derivative
-  f = numpy.where(e < -65)  # threshold
-  g = f[0][0] # first peak
-  return(g)
-
 def find_phase_prony(scanline, Vit=[]):
   '''Estimates wave phase using Prony's method. Vit is the
   pseudo-inverse of the Van der Monde matrix that contains the
@@ -77,7 +69,6 @@ if __name__ == "__main__":
     scanlinearr = numpy.fromstring(scanline, dtype=numpy.uint8)
     if len(scanline) != linesize:
       break
-
     cut_start=0
     length=60
     phase,per = find_phase(scanline)
