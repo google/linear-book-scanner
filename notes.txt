@@ -16,5 +16,5 @@ maximize the print resolution, and turn off any options for rescaling.
 To print the source code as a pamphlet, use enscript. 
 enscript --indent=10 --fancy-header --highlight=python \
   --media=tabloid --portrait --nup=2 --color=1 --nup-xpad=72 \
-  --nup-ypad=72 --style=emacs --toc --underlay="Cheese" *.py -p foo.ps
+  --nup-ypad=72 --style=emacs --underlay="Cheese" *.py -p foo.ps
 
