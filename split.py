@@ -51,7 +51,6 @@ def write_ppm(page_number, scanlines):
 def process(page_number):
   """Split up the image stream into separate pages, and store them."""
   linesize, linecount = ppm_header()
-  page_number = 0
   scanlines = []
   while True:
     scanline = sys.stdin.read(linesize)
