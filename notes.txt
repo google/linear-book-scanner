@@ -6,6 +6,8 @@ python-imaging
 python-numeric
 netpbm
 
+==================================
+
 To print a lifesize SVG, use Firefox on Linux to produce a PDF, then
 use Adobe Reader to send to the printer. For Firefox, Print > Print to
 File > Page Setup > Paper size: Tabloid > Options > Uncheck "Ignore
@@ -13,13 +15,19 @@ Scaling and Shrink To Fit Page Width" > set everything to --blank-- in
 Header and Footer. For Adobe Reader, set the paper size to Tabloid,
 maximize the print resolution, and turn off any options for rescaling.
 
-To print the source code as a pamphlet, use enscript. 
+==================================
+
+To print the source code as a pamphlet, use enscript and modify ~/.lpoptions
+
 enscript --indent=10 --fancy-header --highlight=python \
   --media=tabloid --portrait --nup=2 --color=1 --nup-xpad=72 \
   --nup-ypad=72 --style=emacs --underlay="Cheese" *.py -p foo.ps
 
+Default <PRINTERNAME> sides=two-sided-short-edge ColorModel=CMYK media=tabloid
 
-Warning: this patch will destroy an unmodified device.
+==================================
+
+Warning, this patch will destroy an unmodified device.
 
 +++ genesys.c	2011-07-03 00:31:29.000000000 -0700
 @@ -5746,6 +5746,12 @@
@@ -35,4 +43,46 @@ Warning: this patch will destroy an unmodified device.
    s->params.pixels_per_line =
      ((br_x - tl_x) * resolution) / MM_PER_INCH;
  
+
+--- genesys_gl124.c.orig  2011-01-15 17:01:28.000000000 -0800
++++ ./genesys_gl124.c   2011-06-28 15:27:15.000000000 -0700
+@@ -1727,7 +1727,7 @@
+                                  depth) / 8));
+
+
+-  dev->read_bytes_left = bytes_per_line * lincnt;
++  dev->read_bytes_left = (size_t) bytes_per_line * lincnt;
+
+ DBG (DBG_info,
+      "gl124_init_scan_regs: physical bytes to read = %lu\n",
+@@ -1755,7 +1755,7 @@
+     channels;
+ else
+   dev->total_bytes_to_read =
+-      dev->settings.pixels * dev->settings.lines * channels * (depth / 8);
++      (size_t) dev->settings.pixels * dev->settings.lines * channels
+* (depth / 8);
+
+ DBG (DBG_info, "gl124_init_scan_regs: total bytes to send = %lu\n",
+      (u_long) dev->total_bytes_to_read);
+--- genesys_gl124.c.orig	2011-01-15 17:01:28.000000000 -0800
++++ genesys_gl124.c	2011-07-03 00:31:29.000000000 -0700
+@@ -1727,7 +1727,7 @@
+ 				    depth) / 8));
+ 
+ 
+-  dev->read_bytes_left = bytes_per_line * lincnt;
++  dev->read_bytes_left = (size_t) bytes_per_line * lincnt;
+ 
+   DBG (DBG_info,
+        "gl124_init_scan_regs: physical bytes to read = %lu\n",
+@@ -1755,7 +1755,7 @@
+       channels;
+   else
+     dev->total_bytes_to_read =
+-      dev->settings.pixels * dev->settings.lines * channels * (depth / 8);
++      (size_t) dev->settings.pixels * dev->settings.lines * channels * (depth / 8);
+ 
+   DBG (DBG_info, "gl124_init_scan_regs: total bytes to send = %lu\n",
+        (u_long) dev->total_bytes_to_read);
 
