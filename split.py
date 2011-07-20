@@ -35,9 +35,9 @@ def write_ppm(page_number, scanlines):
   """Write out a single page image to the playground."""
   w = len(scanlines[0]) / 3
   h = len(scanlines)
-  if h < w/4:   # A little bit over two inches
+  if h < w:
     return False
-  kDir = "/tmp/playground" 
+  kDir = "/tmp/playground"
   if not os.path.exists(kDir):
     os.mkdir(kDir)
   filename = os.path.join(kDir, "page-%d.ppm" % page_number)
@@ -68,4 +68,3 @@ if __name__ == "__main__":
   if len(sys.argv) == 2:
     page_number = int(sys.argv[1])
   process(page_number)
-
