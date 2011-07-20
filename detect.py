@@ -21,7 +21,7 @@ from ppm_header import ppm_header
 def extent_of_stripes(scanline):
   """Stripe should cover at least this many pixels."""
   w = len(scanline) // 3
-  kFractionOfSensor = .04 # portion containing strip   
+  kFractionOfSensor = .025 # portion containing strip
   n = int(w * kFractionOfSensor)
   return n
 
