@@ -4,12 +4,12 @@
 
 <!--
 
-for i in `seq -100 2 356`; do 
-  echo "<rect x=\"0mm\" y=\"${i}mm\" width=\"100mm\" height=\"1mm\" transform=\"skewY(45)\"/>" 
+for i in `seq -120 2 601`; do 
+  echo "<rect x=\"120mm\" y=\"${i}mm\" width=\"2in\" height=\"1mm\" transform=\"skewY(45)\"/>" 
 done
 
-for i in `seq 140 2 570`; do 
-  echo "<rect x=\"120mm\" y=\"${i}mm\" width=\"100mm\" height=\"1mm\" transform=\"skewY(-45)\"/>" 
+for i in `seq -100 2 405`; do 
+  echo "<rect x=\"1in\" y=\"${i}mm\" width=\"2in\" height=\"1mm\" transform=\"skewY(-45)\"/>" 
 done
 
 -->
@@ -514,9 +514,12 @@ done
 <rect x="1in" y="402mm"  width="2in" height="1mm" transform="skewY(45)"/>
 <rect x="1in" y="404mm"  width="2in" height="1mm" transform="skewY(45)"/>
 
-<!--
-<rect x="0in" y="0in" width="11in" height="2.75in" style="fill:white;" />
-<rect x="0in" y="14.25in" width="11in" height="2.75in" style="fill:white;" />
-<rect x="0in" y="0in" width="11in" height="17in" style="fill-opacity: 0;stroke:black;" />
+<!-- 
+     The following white rectangles are not symmetric, because the
+     current printing process introduces a large translation. Feel
+     free to make this more sane if you find a better printing process.
 -->
+<rect x="1in" y="0in" width="8in" height="2in" style="fill:white;" />
+<rect x="1in" y="13.5in" width="8in" height="3.5in" style="fill:white;" />
+
 </svg>
