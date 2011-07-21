@@ -28,6 +28,7 @@ def walk_through_lines(linesize, ratio):
       return None
     sys.stdout.write(scanline)
     if detect_pagefeed(scanline):
+      sys.stdout.flush()
       return "Pagefeed"
   return scanline
 
@@ -55,6 +56,10 @@ def process(ratio):
       break
     if scanline == "Pagefeed":
       y = 0
+      tkpi = ImageTk.PhotoImage(im)
+      label_image.configure(image=tkpi)
+      root.after(1, root.quit)
+      root.mainloop(0)
       continue
     image_line = Image.fromstring("RGB", (linewidth, 1), scanline)
     im.paste(image_line.resize((w, 1)), (0, y % h))

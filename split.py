@@ -23,6 +23,7 @@ def insert_pagefeed(linesize):
   sys.stdout.write("Pagefeed")
   for i in range(linesize - 8):
     sys.stdout.write(" ")
+  sys.stdout.flush()
 
 def detect_pagefeed(scanline):
   """Notice a page feed in the image stream."""

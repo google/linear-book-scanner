@@ -18,6 +18,7 @@ import sys
 import numpy
 from PIL import Image
 from ppm import ppm_header
+from detect import extent_of_stripes
 
 def calculate_prony_matrix(period,t):
   ## Angular frequency
@@ -38,15 +39,14 @@ def find_phase(scanline, Vit=[]):
   pseudo-inverse of the Van der Monde matrix that contains the
   component waves, complex-exponential harmonics.'''
   ## The length of our signal.
-  length = 60
-  cut_start=0 ## Where to start cutting the signal from
+  length = extent_of_stripes(scanline)
   ## Time variable (sample index).
   t = numpy.mgrid[:length,]
 
   b = numpy.fromstring(scanline, dtype=numpy.uint8) # convert to numpy
-  d = b[cut_start*3+1:cut_start*3+1+3*length:3]   # pick the green pixels
+  d = b[1:1 + 3 * length:3]   # pick the green pixels
                                                   # from the interest area
-  period = 24.0
+  period = len(scanline) // 7572 * 24.0
   w_1 = 2*numpy.pi/period
   if Vit == None or Vit == []:
     Vit = calculate_prony_matrix(period, t)
