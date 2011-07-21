@@ -15,22 +15,16 @@
 # limitations under the License.
 
 import sys
+import os
+import stat
+import tempfile
 
 def ppm_header():
-  """ Read the image header from stdin, parse, and pass to stdout.
-  Returns size of a scanline in bytes, and the number of rows. """
-  magic_number = sys.stdin.readline()
+  """Pass through the ppm header. Returns size of scanline in bytes, and
+  the number of rows."""
+  magic_number, comment, dimensions, max_value = read_ppm_header(sys.stdin)
   if magic_number != "P6\n":
     raise Exception("I only work with ppm")
-  comment = sys.stdin.readline()
-  if comment[0] == "#":
-    dimensions = sys.stdin.readline()
-  else:
-    dimensions = comment
-    comment = "# Cheesegrater\n"
-  max_value = sys.stdin.readline()
-  if max_value != "255\n":
-    raise Exception("I only work with 8 bits per color channel")
   linesize = int(dimensions.split(" ")[0]) * 3
   linecount = int(dimensions.split(" ")[1])
   sys.stdout.write(magic_number)
@@ -38,3 +32,44 @@ def ppm_header():
   sys.stdout.write(dimensions)
   sys.stdout.write(max_value)
   return linesize, linecount
+
+def read_ppm_header(fp):
+  """ Read the image header from stdin and parse it."""
+  magic_number = fp.readline()
+  comment = fp.readline()
+  if comment[0] == "#":
+    dimensions = fp.readline()
+  else:
+    dimensions = comment
+    comment = "# Cheesegrater\n"
+  max_value = fp.readline()
+  if max_value != "255\n":
+    raise Exception("I only work with 8 bits per color channel")
+  return (magic_number, comment, dimensions, max_value)
+
+def fix_ppm_file(filename):
+  """ Fix the number of rows in the header. Useful if someone
+  has truncated a ppm image, but you still want to open it with
+  a standard viewer."""
+  filesize = os.stat(filename)[stat.ST_SIZE]
+  src = open(filename)
+  magic_number, comment, dimensions, max_value = read_ppm_header(src)
+  w = int(dimensions.split(" ")[0])
+  linesize = w * 3
+  h = filesize // linesize
+  tmpfile, tmpfilename = tempfile.mkstemp()
+  os.write(tmpfile, magic_number)
+  os.write(tmpfile, comment)
+  os.write(tmpfile, "%d %d\n" % (w, h))
+  os.write(tmpfile, max_value)
+  while True:
+    scanline = src.read(linesize)
+    if len(scanline) != linesize:
+      break
+    os.write(tmpfile, scanline)
+  os.close(tmpfile)
+  src.close()
+  os.rename(tmpfilename, filename)
+
+if __name__ == "__main__":
+  fix_ppm_file(sys.argv[1])
