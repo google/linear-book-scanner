@@ -32,10 +32,11 @@ def detect_pagefeed(scanline):
     return False
 
 def write_ppm(page_number, scanlines):
-  """Write out a single page image to the playground."""
+  """Write out a single page image to the playground. Ignore
+  any images that are smaller than the caddy."""
   w = len(scanlines[0]) / 3
   h = len(scanlines)
-  if h < w:
+  if h < 1.25 * w:
     return False
   kDir = "/tmp/playground"
   if not os.path.exists(kDir):
