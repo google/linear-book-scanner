@@ -18,16 +18,25 @@ import os
 import sys
 from ppm import ppm_header
 
+def marker_string():
+  """This marker should survive reversal of scanline"""
+  return "PPPaaagggeeefffeeeeeeddd"
+
 def insert_pagefeed(linesize):
   """Add a page feed to the image stream."""
-  sys.stdout.write("Pagefeed")
-  for i in range(linesize - 8):
+  marker = marker_string()
+  reverse_marker = marker[::-1]
+  sys.stdout.write(marker)
+  for i in range(linesize - 2 * len(marker)):
     sys.stdout.write(" ")
+  sys.stdout.write(reverse_marker)
   sys.stdout.flush()
 
 def detect_pagefeed(scanline):
   """Notice a page feed in the image stream."""
-  if scanline[0:8] == "Pagefeed":
+  marker = marker_string()
+  n = len(marker)
+  if scanline[0:n] == marker:
     return True
   else:
     return False
@@ -51,14 +60,19 @@ def write_ppm(page_number, scanlines):
   return True
 
 def process(page_number):
-  """Split up the image stream into separate pages, and store them."""
+  """Split up the image stream into separate pages, and store them.
+  Take care of mirror image effect while we are at it."""
   linesize, linecount = ppm_header()
   scanlines = []
   while True:
     scanline = sys.stdin.read(linesize)
     if len(scanline) != linesize:
       break
+    if page_number % 2 == 1:
+      scanline = scanline[::-1]
+    sys.stdout.write(scanline)
     if detect_pagefeed(scanline):
+      sys.stdout.flush()
       if write_ppm(page_number, scanlines):
         page_number += 2
       scanlines = []
