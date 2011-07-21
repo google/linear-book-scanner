@@ -38,7 +38,7 @@ def interpolate(scanline, scanline_2, edge, edge_2, target):
   return c.tostring()
 
 def has_wrapped(prev_phase, phase, period):
-  """Have the phase wrapped around?"""
+  """Has the phase wrapped around?"""
   if prev_phase - phase > period * 0.7:
     return True
   else:
