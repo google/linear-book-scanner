@@ -16,7 +16,7 @@
 
 import sys
 import numpy
-from ppm_header import ppm_header
+from ppm import ppm_header
 
 def extent_of_stripes(scanline):
   """Stripe should cover at least this many pixels."""

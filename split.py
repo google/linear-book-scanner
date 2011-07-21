@@ -16,7 +16,7 @@
 
 import os
 import sys
-from ppm_header import ppm_header
+from ppm import ppm_header
 
 def insert_pagefeed(linesize):
   """Add a page feed to the image stream."""

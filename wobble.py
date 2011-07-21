@@ -19,7 +19,7 @@ import sys
 import os
 import numpy
 from PIL import Image
-from ppm_header import ppm_header
+from ppm import ppm_header
 from phase import find_phase
 from detect import detect_stripes
 from split import insert_pagefeed

@@ -17,7 +17,7 @@
 import sys
 import numpy
 from PIL import Image
-from ppm_header import ppm_header
+from ppm import ppm_header
 
 def calculate_prony_matrix(period,t):
   ## Angular frequency

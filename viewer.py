@@ -17,7 +17,7 @@
 import sys
 import Tkinter
 from PIL import Image, ImageTk, ImageDraw
-from ppm_header import ppm_header
+from ppm import ppm_header
 from split import detect_pagefeed
 
 def walk_through_lines(linesize, ratio):
