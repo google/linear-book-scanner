@@ -74,7 +74,7 @@ def process(ratio):
       root.mainloop(0)
 
 if __name__ == "__main__":
-  ratio = 4
+  ratio = 5
   if len(sys.argv) == 2:
     ratio = int(sys.argv[1])
   process(ratio)

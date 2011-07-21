@@ -30,10 +30,10 @@ scan() {
 
 
   scanimage -d $S1 $ARGS |\
-    ./wobble.py | ./viewer.py 5 | ./split.py > /dev/null &
+    ./wobble.py | ./viewer.py | ./split.py > /dev/null &
 
   scanimage -d $S2 $ARGS |\
-    ./wobble.py | ./viewer.py 5 | ./split.py 1 > /dev/null &
+    ./wobble.py | ./viewer.py | ./split.py 1 > /dev/null &
 }
 
 scan
