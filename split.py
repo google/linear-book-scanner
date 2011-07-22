@@ -16,6 +16,7 @@
 
 import os
 import sys
+import pygame
 from ppm import ppm_header
 
 def marker_string():
@@ -44,6 +45,8 @@ def detect_pagefeed(scanline):
 def write_ppm(page_number, scanlines):
   """Write out a single page image to the playground. Ignore
   any images that are smaller than the caddy."""
+  pygame.mixer.init()
+  alert = pygame.mixer.Sound('beep.wav')
   w = len(scanlines[0]) / 3
   h = len(scanlines)
   if h < 1.25 * w:
@@ -57,6 +60,7 @@ def write_ppm(page_number, scanlines):
   for i in range(h):
     f.write(scanlines[i])
   f.close()
+  alert.play()
   return True
 
 def process(page_number):

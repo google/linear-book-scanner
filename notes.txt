@@ -1,10 +1,11 @@
 Dependencies
 
-python-tk
-python-imaging-tk
-python-imaging
-python-numeric
-netpbm
+python-tk           gui
+python-imaging-tk   gui
+python-imaging      gui
+python-numeric      computation
+python-pygame       audio
+netpbm              testing
 
 ==================================
 
@@ -85,4 +86,3 @@ Warning, this patch will destroy an unmodified device.
  
    DBG (DBG_info, "gl124_init_scan_regs: total bytes to send = %lu\n",
         (u_long) dev->total_bytes_to_read);
-
