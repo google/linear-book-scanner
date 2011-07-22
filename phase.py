@@ -20,6 +20,8 @@ from PIL import Image
 from ppm import ppm_header
 from detect import extent_of_stripes
 
+Vit = None
+
 def calculate_prony_matrix(period,t):
   ## Angular frequency
   w_1 = 2*numpy.pi/period
@@ -34,7 +36,7 @@ def calculate_prony_matrix(period,t):
   Vit = numpy.linalg.pinv(V)
   return Vit
 
-def find_phase(scanline, Vit=[]):
+def find_phase(scanline):
   '''Estimates wave phase using Prony's method. Vit is the
   pseudo-inverse of the Van der Monde matrix that contains the
   component waves, complex-exponential harmonics.'''
@@ -48,7 +50,8 @@ def find_phase(scanline, Vit=[]):
                                                   # from the interest area
   period = len(scanline) // 7572 * 24.0
   w_1 = 2*numpy.pi/period
-  if Vit == None or Vit == []:
+  global Vit
+  if Vit == None:
     Vit = calculate_prony_matrix(period, t)
   x = numpy.dot(Vit,d)
 
