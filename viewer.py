@@ -54,19 +54,15 @@ def process(ratio):
     n += ratio
     if scanline == None:
       break
-    if scanline == "Pagefeed":
-      y = 0
-      tkpi = ImageTk.PhotoImage(im)
-      label_image.configure(image=tkpi)
-      root.after(1, root.quit)
-      root.mainloop(0)
-      continue
-    image_line = Image.fromstring("RGB", (linewidth, 1), scanline)
-    im.paste(image_line.resize((w, 1)), (0, y % h))
     if y % h == 0:
       root.title('Pass Through Viewer - %d' % n)
+    if scanline == "Pagefeed":
+      y = 0
+    else:
+      image_line = Image.fromstring("RGB", (linewidth, 1), scanline)
+      im.paste(image_line.resize((w, 1)), (0, y % h))
     y += 1
-    if y % 40 == 0:
+    if y % 40 == 0 or scanline == "Pagefeed":
       draw.line((0, y % h, w, y % h), fill="green")
       tkpi = ImageTk.PhotoImage(im)
       label_image.configure(image=tkpi)
