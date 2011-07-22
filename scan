@@ -34,6 +34,10 @@ scan() {
 
   scanimage -d $S2 $ARGS |\
     ./wobble.py | ./split.py | ./viewer.py > /dev/null &
+
+  echo -n "Calibrating ... "
+  sleep 5
+  echo "done."
 }
 
 scan
