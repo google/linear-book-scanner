@@ -61,7 +61,7 @@ def write_pnm(page_number, scanlines, channels):
     magic_number = "P5"
     extension = "pgm"
   else:
-    raise("BUG")
+    raise ValueError("Unsupported channel count: %d" % channels)
   header = "%s\n%d %d\n255\n" % (magic_number, w, h)
   filename = os.path.join(kDir, "page-%d.%s" % (page_number, extension))
   f = open(filename, "wb")

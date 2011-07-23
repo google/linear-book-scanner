@@ -43,7 +43,7 @@ def find_phase(scanline, channels):
   elif channels == 3:
     d = b[1:1 + 3 * length:3]
   else:
-    raise("BUG")
+    raise ValueError("Unsupported channel count: %d" % channels)
   kScanbarPixels = 2524   # When run at 300 ppi
   period = 24.0 * scanwidth / kScanbarPixels
   global carrier

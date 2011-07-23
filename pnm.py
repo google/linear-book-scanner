@@ -28,7 +28,7 @@ def pnm_header():
   elif magic_number == "P5\n":
     channels = 1
   else:
-    raise Exception("Unsupported format %s" % magic_number)
+    raise ValueError("Unsupported format %s" % magic_number)
   linewidth = int(dimensions.split(" ")[0])
   linecount = int(dimensions.split(" ")[1])
   sys.stdout.write(magic_number)
@@ -40,6 +40,8 @@ def pnm_header():
 def read_pnm_header(fp):
   """ Read the image header from stdin and parse it."""
   magic_number = fp.readline()
+  if len(magic_number) != 3 or magic_number[0] != "P":
+    raise TypeError("Hey! This is not image data.")
   comment = fp.readline()
   if comment[0] == "#":
     dimensions = fp.readline()
@@ -48,7 +50,7 @@ def read_pnm_header(fp):
     comment = "# Cheesegrater\n"
   max_value = fp.readline()
   if max_value != "255\n":
-    raise Exception("I only work with 8 bits per color channel")
+    raise ValueError("I only work with 8 bits per color channel")
   return (magic_number, comment, dimensions, max_value)
 
 def fix_pnm_file(filename):
