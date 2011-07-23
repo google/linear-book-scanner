@@ -59,9 +59,9 @@ exercise ./wobble.py
 echo "ALL"
 exercise "./wobble.py | ./viewer.py | ./split.py"
 
-echo "PPM"
-time ./ppm.py /tmp/playground/page-0.ppm
-time ./ppm.py /tmp/playground/page-0.pgm
+echo "PNM"
+time ./pnm.py /tmp/playground/page-0.ppm
+time ./pnm.py /tmp/playground/page-0.pgm
 
 LOC=$(cat *.py | grep -v "^#" | wc -l)
 echo -e "\nBrought to you by $LOC lines of python."

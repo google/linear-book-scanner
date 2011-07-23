@@ -19,10 +19,10 @@ import os
 import stat
 import tempfile
 
-def ppm_header():
-  """Pass through the ppm header. Returns size of scanline in bytes, and
+def pnm_header():
+  """Pass through the pnm header. Returns size of scanline in bytes, and
   the number of rows."""
-  magic_number, comment, dimensions, max_value = read_ppm_header(sys.stdin)
+  magic_number, comment, dimensions, max_value = read_pnm_header(sys.stdin)
   if magic_number == "P6\n":
     channels = 3
   elif magic_number == "P5\n":
@@ -37,7 +37,7 @@ def ppm_header():
   sys.stdout.write(max_value)
   return linewidth, linecount, channels
 
-def read_ppm_header(fp):
+def read_pnm_header(fp):
   """ Read the image header from stdin and parse it."""
   magic_number = fp.readline()
   comment = fp.readline()
@@ -51,13 +51,13 @@ def read_ppm_header(fp):
     raise Exception("I only work with 8 bits per color channel")
   return (magic_number, comment, dimensions, max_value)
 
-def fix_ppm_file(filename):
+def fix_pnm_file(filename):
   """ Fix the number of rows in the header. Useful if someone
-  has truncated a ppm image, but you still want to open it with
+  has truncated a pnm image, but you still want to open it with
   a standard viewer."""
   filesize = os.stat(filename)[stat.ST_SIZE]
   src = open(filename)
-  magic_number, comment, dimensions, max_value = read_ppm_header(src)
+  magic_number, comment, dimensions, max_value = read_pnm_header(src)
   w = int(dimensions.split(" ")[0])
   linesize = w * 3
   h = filesize // linesize
@@ -76,4 +76,4 @@ def fix_ppm_file(filename):
   os.rename(tmpfilename, filename)
 
 if __name__ == "__main__":
-  fix_ppm_file(sys.argv[1])
+  fix_pnm_file(sys.argv[1])

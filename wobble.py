@@ -18,7 +18,7 @@
 import sys
 import os
 from PIL import Image
-from ppm import ppm_header
+from pnm import pnm_header
 from phase import find_phase
 from detect import detect_stripes
 from split import insert_pagefeed
@@ -82,7 +82,7 @@ def straighten(prev_scanline, channels):
 
 def process():
   """Dewobble the entire image coming from standard input."""
-  linewidth, linecount, channels = ppm_header()
+  linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   while True:
     scanline = sys.stdin.read(linesize)

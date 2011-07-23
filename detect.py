@@ -16,7 +16,7 @@
 
 import sys
 import numpy
-from ppm import ppm_header
+from pnm import pnm_header
 
 def extent_of_stripes(scanwidth):
   """Stripe should cover at least this many pixels."""
@@ -41,7 +41,7 @@ def detect_stripes(scanline, channels):
   return False
 
 if __name__ == "__main__":
-  linewidth, linecount, channels = ppm_header()
+  linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   page_number = 0
   scanline = sys.stdin.read(linesize)

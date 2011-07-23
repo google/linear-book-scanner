@@ -17,7 +17,7 @@
 import sys
 import numpy
 from PIL import Image
-from ppm import ppm_header
+from pnm import pnm_header
 from detect import extent_of_stripes
 
 carrier = None
@@ -44,8 +44,8 @@ def find_phase(scanline, channels):
     d = b[1:1 + 3 * length:3]
   else:
     raise("BUG")
-  ## The scanbar produces 2524 pixels at 300 pixels per inch
-  period = scanwidth // 2524 * 24.0
+  kScanbarPixels = 2524   # When run at 300 ppi
+  period = 24.0 * scanwidth / kScanbarPixels
   global carrier
   if carrier == None:
     carrier = calculate_windowed_complex_exponential(period, length)
@@ -55,7 +55,7 @@ def find_phase(scanline, channels):
   return delta, period
 
 if __name__ == "__main__":
-  linewidth, linecount, channels = ppm_header()
+  linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   while True:
     scanline = sys.stdin.read(linesize)

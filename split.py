@@ -17,7 +17,7 @@
 import os
 import sys
 import pygame
-from ppm import ppm_header
+from pnm import pnm_header
 
 def marker_string():
   """This marker should survive reversal of scanline"""
@@ -75,7 +75,7 @@ def write_pnm(page_number, scanlines, channels):
 def process(page_number):
   """Split up the image stream into separate pages, and store them.
   Take care of mirror image effect while we are at it."""
-  linewidth, linecount, channels = ppm_header()
+  linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   scanlines = []
   while True:
