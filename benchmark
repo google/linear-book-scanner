@@ -29,8 +29,11 @@ src2() {
 src3() {
   pnmcat -tb \
     <(src2 | pgmtoppm white) \
+    <(src1) \
     <(src2 | pgmtoppm white) \
+    <(src1) \
     <(src2 | pgmtoppm white) \
+    <(src1) \
     <(src2 | pgmtoppm white) 
 }
 
@@ -42,6 +45,9 @@ exercise() {
 
 echo "No-op"
 exercise cat
+
+echo "Meter"
+exercise ./meter.py
 
 echo "Detect"
 exercise ./detect.py
@@ -59,7 +65,7 @@ echo "Wobble"
 exercise ./wobble.py
 
 echo "ALL"
-exercise "./wobble.py | ./viewer.py | ./split.py"
+exercise "./meter.py | ./wobble.py | ./viewer.py | ./split.py"
 
 echo "PNM"
 time ./pnm.py /tmp/playground/page-0.ppm

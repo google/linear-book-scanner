@@ -22,6 +22,8 @@ from detect import extent_of_stripes
 
 carrier = None
 
+kScanbarPixels = 2524   # When run at 300 ppi
+
 def calculate_windowed_complex_exponential(period, N):
   t = numpy.mgrid[0:N] - .5 * (N - 1)
   # window = 0.54 + 0.46 * numpy.cos(2 * numpy.pi * (t / N )) # Hamming window
@@ -44,7 +46,6 @@ def find_phase(scanline, channels):
     d = b[1:1 + 3 * length:3]
   else:
     raise ValueError("Unsupported channel count: %d" % channels)
-  kScanbarPixels = 2524   # When run at 300 ppi
   period = 24.0 * scanwidth / kScanbarPixels
   global carrier
   if carrier == None:
