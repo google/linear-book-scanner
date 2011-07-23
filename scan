@@ -26,13 +26,13 @@ scan() {
   local S1=$(echo "$SCANNERS" | head -1 | cut -f2 -d'`' | cut -f1 -d"'")
   local S2=$(echo "$SCANNERS" | tail -1 | cut -f2 -d'`' | cut -f1 -d"'")
 
-  local ARGS="--clear-calibration --resolution 300 -y 111 --mode=color"
+  # Driver hacked such that -y 111 means "scan as long as you can"
+  local ARGS="--clear-calibration -y 111 --mode=color"
 
-
-  scanimage -d $S1 $ARGS |\
+  scanimage -d $S1 $ARGS $@ |\
     ./wobble.py | ./split.py 1 | ./viewer.py > /dev/null &
 
-  scanimage -d $S2 $ARGS |\
+  scanimage -d $S2 $ARGS $@ |\
     ./wobble.py | ./split.py | ./viewer.py > /dev/null &
 
   echo -n "Calibrating ... "
@@ -40,6 +40,6 @@ scan() {
   echo "done."
 }
 
-scan
+scan $@
 wait
 
