@@ -13,8 +13,8 @@ To print a lifesize SVG, use Firefox on Linux to produce a PDF, then
 use Adobe Reader to send to the printer. For Firefox, Print > Print to
 File > Page Setup > Paper size: Tabloid > Options > Uncheck "Ignore
 Scaling and Shrink To Fit Page Width" > set everything to --blank-- in
-Header and Footer. For Adobe Reader, set the paper size to Tabloid,
-maximize the print resolution, and turn off any options for rescaling.
+Header and Footer. For Adobe Reader, set the paper size to 11 x 17
+inches, and maximize the print resolution.
 
 ==================================
 
