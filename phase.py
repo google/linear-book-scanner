@@ -59,13 +59,15 @@ if __name__ == "__main__":
   linesize = linewidth * channels
   while True:
     scanline = sys.stdin.read(linesize)
-    scanlinearr = numpy.fromstring(scanline, dtype=numpy.uint8)
     if len(scanline) != linesize:
       break
-    length = 60
-    phase, per = find_phase(scanline, channels)
-    phase_i = int(phase) + length
+    phase, period = find_phase(scanline, channels)
     ## Paint the detected edges red if we can
     if channels == 3:
+      scanlinearr = numpy.fromstring(scanline, dtype=numpy.uint8)
+      length = 60
+      phase_i = int(phase) + length
       scanlinearr[phase_i * 3:phase_i * 3 + 3] = [255, 0, 0]
-    sys.stdout.write(scanlinearr)
+      sys.stdout.write(scanlinearr)
+    else:
+      sys.stdout.write(scanline)
