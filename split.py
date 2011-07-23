@@ -44,12 +44,17 @@ def detect_pagefeed(scanline):
 
 def write_pnm(page_number, scanlines, channels):
   """Write out a single page image to the playground. Ignore
-  any images that are smaller than the caddy."""
+  any images that are smaller than the caddy. Use audio alerts
+  to indicate what is happening."""
   pygame.mixer.init()
-  alert = pygame.mixer.Sound('beep.wav')
+  beep = pygame.mixer.Sound('beep.wav')
+  boop = pygame.mixer.Sound('boop.wav')
   w = len(scanlines[0]) // channels
   h = len(scanlines)
-  if h < 1.25 * w:
+  kCaddyAspectRatio = 1.25
+  kNoiseTheshold = 3
+  if h < kCaddyAspectRatio * w and h > kNoiseThreshold:
+    boop.play()
     return False
   kDir = "/tmp/playground"
   if not os.path.exists(kDir):
@@ -69,7 +74,7 @@ def write_pnm(page_number, scanlines, channels):
   for i in range(h):
     f.write(scanlines[i])
   f.close()
-  alert.play()
+  beep.play()
   return True
 
 def process(page_number):
