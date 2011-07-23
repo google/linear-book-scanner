@@ -17,7 +17,7 @@
 import sys
 import numpy
 from PIL import Image
-from ppm import ppm_header
+from pnm import pnm_header
 from detect import extent_of_stripes
 
 Vit = None
@@ -67,7 +67,7 @@ def find_phase(scanline, channels):
   return delta, period
 
 if __name__ == "__main__":
-  linewidth, linecount, channels = ppm_header()
+  linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   while True:
     scanline = sys.stdin.read(linesize)

@@ -17,7 +17,7 @@
 import sys
 import Tkinter
 from PIL import Image, ImageTk, ImageDraw
-from ppm import ppm_header
+from pnm import pnm_header
 from split import detect_pagefeed
 
 def walk_through_lines(linesize, ratio):
@@ -38,7 +38,7 @@ def process(ratio):
   n = 0
   y = 0
   h = 800
-  linewidth, linecount, channels = ppm_header()
+  linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   w = linewidth // ratio
   if channels == 1:
