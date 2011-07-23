@@ -23,20 +23,22 @@ src1() {
 }
 
 src2() {
-  jpegtopnm testdata/code.jpg 2> /dev/null | pnmdepth 255 | pgmtoppm white
-}
-
-src3() {
   jpegtopnm testdata/code.jpg 2> /dev/null | pnmdepth 255
 }
 
+src3() {
+  pnmcat -tb \
+    <(src2 | pgmtoppm white) \
+    <(src2 | pgmtoppm white) \
+    <(src2 | pgmtoppm white) \
+    <(src2 | pgmtoppm white) 
+}
 
 exercise() {
   time src1 | tee $BEFORE | eval $1 > $AFTER
   time src2 | tee $BEFORE | eval $1 > $AFTER
   time src3 | tee $BEFORE | eval $1 > $AFTER
 }
-
 
 echo "No-op"
 exercise cat
