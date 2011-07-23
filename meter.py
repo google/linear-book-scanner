@@ -44,7 +44,7 @@ def process():
   phase = 0
   scale = 300 * linewidth / kScanbarPixels
   kSmoothingFactor = 20
-  kGraphicalSmoothingFactor = 10
+  kGraphicalSmoothingFactor = 1
   values = range(kSmoothingFactor)
   n = 0
   while True:
@@ -60,8 +60,8 @@ def process():
         optical_dpi = (phase - prev_phase) * scale
         values[n % kSmoothingFactor] = optical_dpi
         pos = sum(values, 0.0) / len(values)
-      else:
-        pos = -100
+        if pos > 600:
+          pos = 600  
     if n % kGraphicalSmoothingFactor == 0:
       draw(screen, ball_surface, bg_surface, pos)
 
