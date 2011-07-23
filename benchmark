@@ -26,9 +26,15 @@ src2() {
   jpegtopnm testdata/code.jpg 2> /dev/null | pnmdepth 255 | pgmtoppm white
 }
 
+src3() {
+  jpegtopnm testdata/code.jpg 2> /dev/null | pnmdepth 255
+}
+
+
 exercise() {
   time src1 | tee $BEFORE | eval $1 > $AFTER
   time src2 | tee $BEFORE | eval $1 > $AFTER
+  time src3 | tee $BEFORE | eval $1 > $AFTER
 }
 
 
@@ -53,12 +59,9 @@ exercise ./wobble.py
 echo "ALL"
 exercise "./wobble.py | ./viewer.py | ./split.py"
 
+echo "PPM"
+time ./ppm.py /tmp/playground/page-0.ppm
+time ./ppm.py /tmp/playground/page-0.pgm
+
 LOC=$(cat *.py | grep -v "^#" | wc -l)
 echo -e "\nBrought to you by $LOC lines of python."
-
-
-
-
-
-
-

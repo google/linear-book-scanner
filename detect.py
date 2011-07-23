@@ -18,31 +18,31 @@ import sys
 import numpy
 from ppm import ppm_header
 
-def extent_of_stripes(scanline):
+def extent_of_stripes(scanwidth):
   """Stripe should cover at least this many pixels."""
-  w = len(scanline) // 3
-  kFractionOfSensor = .025 # portion containing strip
-  n = int(w * kFractionOfSensor)
-  return n
+  kFractionOfSensor = .025
+  return int(scanwidth * kFractionOfSensor)
 
-def detect_stripes(scanline):
+def detect_stripes(scanline, channels):
   """Are we on the fiducial stripe or not?"""
-  n = extent_of_stripes(scanline)
+  scanwidth = len(scanline) // channels
+  n = extent_of_stripes(scanwidth) * channels
   roi = scanline[:n]
   kThreshold = 15
   a = numpy.fromstring(roi, dtype=numpy.uint8)
   avg = numpy.average(a)
   black = len(numpy.where(a < avg - kThreshold)[0])
   white = len(numpy.where(a > avg + kThreshold)[0])
-  balance = abs(black - white) / float(len(roi))
-  coverage = (black + white) / float(len(roi))
+  balance = abs(black - white) / float(n)
+  coverage = (black + white) / float(n)
   if balance < 0.35:
     if coverage > 0.7:
       return True
   return False
 
 if __name__ == "__main__":
-  linesize, linecount = ppm_header()
+  linewidth, linecount, channels = ppm_header()
+  linesize = linewidth * channels
   page_number = 0
   scanline = sys.stdin.read(linesize)
   prev_scanline = scanline
@@ -50,5 +50,5 @@ if __name__ == "__main__":
     scanline = sys.stdin.read(linesize)
     if len(scanline) != linesize:
       break
-    if detect_stripes(scanline):
+    if detect_stripes(scanline, channels):
       sys.stdout.write(scanline)

@@ -42,21 +42,30 @@ def detect_pagefeed(scanline):
   else:
     return False
 
-def write_ppm(page_number, scanlines):
+def write_pnm(page_number, scanlines, channels):
   """Write out a single page image to the playground. Ignore
   any images that are smaller than the caddy."""
   pygame.mixer.init()
   alert = pygame.mixer.Sound('beep.wav')
-  w = len(scanlines[0]) / 3
+  w = len(scanlines[0]) // channels
   h = len(scanlines)
   if h < 1.25 * w:
     return False
   kDir = "/tmp/playground"
   if not os.path.exists(kDir):
     os.mkdir(kDir)
-  filename = os.path.join(kDir, "page-%d.ppm" % page_number)
+  if channels == 3:
+    magic_number = "P6"
+    extension = "ppm"
+  elif channels == 1:
+    magic_number = "P5"
+    extension = "pgm"
+  else:
+    raise("BUG")
+  header = "%s\n%d %d\n255\n" % (magic_number, w, h)
+  filename = os.path.join(kDir, "page-%d.%s" % (page_number, extension))
   f = open(filename, "wb")
-  f.write("P6\n%d %d\n255\n" % (w, h))
+  f.write(header)
   for i in range(h):
     f.write(scanlines[i])
   f.close()
@@ -66,7 +75,8 @@ def write_ppm(page_number, scanlines):
 def process(page_number):
   """Split up the image stream into separate pages, and store them.
   Take care of mirror image effect while we are at it."""
-  linesize, linecount = ppm_header()
+  linewidth, linecount, channels = ppm_header()
+  linesize = linewidth * channels
   scanlines = []
   while True:
     scanline = sys.stdin.read(linesize)
@@ -77,7 +87,7 @@ def process(page_number):
     sys.stdout.write(scanline)
     if detect_pagefeed(scanline):
       sys.stdout.flush()
-      if write_ppm(page_number, scanlines):
+      if write_pnm(page_number, scanlines, channels):
         page_number += 2
       scanlines = []
     scanlines.append(scanline)

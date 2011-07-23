@@ -38,10 +38,14 @@ def process(ratio):
   n = 0
   y = 0
   h = 800
-  linesize, linecount = ppm_header()
-  linewidth = linesize / 3
+  linewidth, linecount, channels = ppm_header()
+  linesize = linewidth * channels
   w = linewidth // ratio
-  im = Image.new("RGB", (w, h))
+  if channels == 1:
+    image_type = "L"
+  elif channels == 3:
+    image_type = "RGB"
+  im = Image.new(image_type, (w, h))
   draw = ImageDraw.Draw(im)
   root = Tkinter.Tk()
   root.geometry("%dx%d" % (w, h))
@@ -59,7 +63,7 @@ def process(ratio):
     if scanline == "Pagefeed":
       y = 0
     else:
-      image_line = Image.fromstring("RGB", (linewidth, 1), scanline)
+      image_line = Image.fromstring(image_type, (linewidth, 1), scanline)
       im.paste(image_line.resize((w, 1)), (0, y % h))
     y += 1
     if y % 40 == 0 or scanline == "Pagefeed":

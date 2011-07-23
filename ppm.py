@@ -23,15 +23,19 @@ def ppm_header():
   """Pass through the ppm header. Returns size of scanline in bytes, and
   the number of rows."""
   magic_number, comment, dimensions, max_value = read_ppm_header(sys.stdin)
-  if magic_number != "P6\n":
-    raise Exception("I only work with ppm")
-  linesize = int(dimensions.split(" ")[0]) * 3
+  if magic_number == "P6\n":
+    channels = 3
+  elif magic_number == "P5\n":
+    channels = 1
+  else:
+    raise Exception("Unsupported format %s" % magic_number)
+  linewidth = int(dimensions.split(" ")[0])
   linecount = int(dimensions.split(" ")[1])
   sys.stdout.write(magic_number)
   sys.stdout.write(comment)
   sys.stdout.write(dimensions)
   sys.stdout.write(max_value)
-  return linesize, linecount
+  return linewidth, linecount, channels
 
 def read_ppm_header(fp):
   """ Read the image header from stdin and parse it."""

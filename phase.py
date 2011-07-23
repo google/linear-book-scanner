@@ -27,51 +27,57 @@ def calculate_prony_matrix(period,t):
   w_1 = 2*numpy.pi/period
   ## How many partials fit in the frequency space for this given frequency.
   ## i.e. how many are below Nyquist freq.
-  lastpartial = numpy.floor(period/2)
+  lastpartial = numpy.floor(period / 2)
   ## Harmonic "indices" k. Skip the evens ones because it's a square wave...
   k = numpy.mgrid[1:lastpartial+1:2]
   ## The component frequencies.
   w_k=w_1*numpy.array([k])
-  V = numpy.exp(numpy.dot(t.T,1j*numpy.c_[w_k,0,-w_k]))
+  V = numpy.exp(numpy.dot(t.T, 1j * numpy.c_[w_k, 0, -w_k]))
   Vit = numpy.linalg.pinv(V)
   return Vit
 
-def find_phase(scanline):
+def find_phase(scanline, channels):
   '''Estimates wave phase using Prony's method. Vit is the
   pseudo-inverse of the Van der Monde matrix that contains the
   component waves, complex-exponential harmonics.'''
   ## The length of our signal.
-  length = extent_of_stripes(scanline)
+  scanwidth = len(scanline) // channels
+  length = extent_of_stripes(scanwidth)
   ## Time variable (sample index).
   t = numpy.mgrid[:length,]
-
-  b = numpy.fromstring(scanline, dtype=numpy.uint8) # convert to numpy
-  d = b[1:1 + 3 * length:3]   # pick the green pixels
-                                                  # from the interest area
-  period = len(scanline) // 7572 * 24.0
-  w_1 = 2*numpy.pi/period
+  ## Convert to numpy
+  b = numpy.fromstring(scanline, dtype=numpy.uint8)
+  ## Work with green pixel
+  if channels == 1:
+    d = b[0:length]
+  elif channels == 3:
+    d = b[1:1 + 3 * length:3]
+  else:
+    raise("BUG")
+  ## The scanbar produces 2524 pixels at 300 pixels per inch
+  period = scanwidth // 2524 * 24.0
+  w_1 = 2 *numpy.pi / period
   global Vit
   if Vit == None:
     Vit = calculate_prony_matrix(period, t)
-  x = numpy.dot(Vit,d)
-
+  x = numpy.dot(Vit, d)
   phi1 = numpy.arctan2(numpy.real(x[0]), numpy.imag(x[0]))
   phi = phi1
-
-  delta = phi * period/(2*numpy.pi)
+  delta = phi * period / (2 * numpy.pi)
   return delta, period
 
 if __name__ == "__main__":
-  linesize, linecount = ppm_header()
+  linewidth, linecount, channels = ppm_header()
+  linesize = linewidth * channels
   while True:
     scanline = sys.stdin.read(linesize)
     scanlinearr = numpy.fromstring(scanline, dtype=numpy.uint8)
     if len(scanline) != linesize:
       break
-    cut_start=0
-    length=60
-    phase,per = find_phase(scanline)
-    phase_i = int(phase)+cut_start+length
-    ## Paint the detected edges red
-    scanlinearr[phase_i*3:phase_i*3+3]=[255,0,0]
+    length = 60
+    phase, per = find_phase(scanline, channels)
+    phase_i = int(phase) + length
+    ## Paint the detected edges red if we can
+    if channels == 3:
+      scanlinearr[phase_i * 3:phase_i * 3 + 3] = [255, 0, 0]
     sys.stdout.write(scanlinearr)

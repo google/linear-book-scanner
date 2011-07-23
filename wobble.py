@@ -17,23 +17,26 @@
 
 import sys
 import os
-import numpy
 from PIL import Image
 from ppm import ppm_header
 from phase import find_phase
 from detect import detect_stripes
 from split import insert_pagefeed
 
-def interpolate(scanline, scanline_2, edge, edge_2, target):
+def interpolate(channels, scanline, scanline_2, edge, edge_2, target):
   """Alpha blend two scanlines. Takes two scanlines and their edges, and
   returns an interpolated scanline with the edge where we want it."""
   if edge == edge_2:
     alpha = 1
   else:
     alpha = (target - edge) / (edge_2 - edge)
-  w = len(scanline) // 3
-  a = Image.fromstring("RGB", (w, 1), scanline)
-  b = Image.fromstring("RGB", (w, 1), scanline_2)
+  w = len(scanline) // channels
+  if channels == 3:
+    image_type = "RGB"
+  elif channels == 1:
+    image_type = "L"
+  a = Image.fromstring(image_type, (w, 1), scanline)
+  b = Image.fromstring(image_type, (w, 1), scanline_2)
   c = Image.blend(a, b, alpha)
   return c.tostring()
 
@@ -44,18 +47,18 @@ def has_wrapped(prev_phase, phase, period):
   else:
     return False
 
-def straighten(prev_scanline):
+def straighten(prev_scanline, channels):
   """Straighten an entire book page"""
   linesize = len(prev_scanline)
-  w = linesize // 3
-  prev_phase, period = find_phase(prev_scanline)
+  w = linesize // channels
+  prev_phase, period = find_phase(prev_scanline, channels)
   scanline = sys.stdin.read(linesize)
   if len(scanline) != linesize:
     return False
-  phase, period = find_phase(scanline)
+  phase, period = find_phase(scanline, channels)
   target = prev_phase
   n = 0
-  while detect_stripes(scanline):
+  while detect_stripes(scanline, channels):
     if has_wrapped(prev_phase, phase, period):
       target -= period
       prev_phase -= period
@@ -64,11 +67,11 @@ def straighten(prev_scanline):
       scanline = sys.stdin.read(linesize)
       if len(scanline) != linesize:
         return False
-      phase, period = find_phase(scanline)
+      phase, period = find_phase(scanline, channels)
     elif prev_phase > target:
       target += 1
     else:
-      line = interpolate(prev_scanline, scanline,
+      line = interpolate(channels, prev_scanline, scanline,
                          prev_phase, phase, target)
       sys.stdout.write(line)
       n += 1
@@ -79,13 +82,14 @@ def straighten(prev_scanline):
 
 def process():
   """Dewobble the entire image coming from standard input."""
-  linesize, linecount = ppm_header()
+  linewidth, linecount, channels = ppm_header()
+  linesize = linewidth * channels
   while True:
     scanline = sys.stdin.read(linesize)
     if len(scanline) != linesize:
       break
-    if detect_stripes(scanline):
-      straighten(scanline)
+    if detect_stripes(scanline, channels):
+      straighten(scanline, channels)
 
 if __name__ == "__main__":
   process()
