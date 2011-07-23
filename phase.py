@@ -20,31 +20,21 @@ from PIL import Image
 from ppm import ppm_header
 from detect import extent_of_stripes
 
-Vit = None
+carrier = None
 
-def calculate_prony_matrix(period,t):
-  ## Angular frequency
-  w_1 = 2*numpy.pi/period
-  ## How many partials fit in the frequency space for this given frequency.
-  ## i.e. how many are below Nyquist freq.
-  lastpartial = numpy.floor(period / 2)
-  ## Harmonic "indices" k. Skip the evens ones because it's a square wave...
-  k = numpy.mgrid[1:lastpartial+1:2]
-  ## The component frequencies.
-  w_k=w_1*numpy.array([k])
-  V = numpy.exp(numpy.dot(t.T, 1j * numpy.c_[w_k, 0, -w_k]))
-  Vit = numpy.linalg.pinv(V)
-  return Vit
+def calculate_windowed_complex_exponential(period, N):
+  t = numpy.mgrid[0:N] - .5 * (N - 1)
+  # window = 0.54 + 0.46 * numpy.cos(2 * numpy.pi * (t / N )) # Hamming window
+  window = numpy.sinc(t / (N / 2 + N % 2)) # Lanczos window
+  omega = 2 * numpy.pi / period
+  return window * numpy.exp(-1j * omega * t)
 
 def find_phase(scanline, channels):
-  '''Estimates wave phase using Prony's method. Vit is the
-  pseudo-inverse of the Van der Monde matrix that contains the
-  component waves, complex-exponential harmonics.'''
+  '''Estimates wave phase by de-modulating the input square wave with a
+  windowed complex exponential of the same frequency.'''
   ## The length of our signal.
   scanwidth = len(scanline) // channels
   length = extent_of_stripes(scanwidth)
-  ## Time variable (sample index).
-  t = numpy.mgrid[:length,]
   ## Convert to numpy
   b = numpy.fromstring(scanline, dtype=numpy.uint8)
   ## Work with green pixel
@@ -56,13 +46,11 @@ def find_phase(scanline, channels):
     raise("BUG")
   ## The scanbar produces 2524 pixels at 300 pixels per inch
   period = scanwidth // 2524 * 24.0
-  w_1 = 2 *numpy.pi / period
-  global Vit
-  if Vit == None:
-    Vit = calculate_prony_matrix(period, t)
-  x = numpy.dot(Vit, d)
-  phi1 = numpy.arctan2(numpy.real(x[0]), numpy.imag(x[0]))
-  phi = phi1
+  global carrier
+  if carrier == None:
+    carrier = calculate_windowed_complex_exponential(period, length)
+  coeff = numpy.dot(carrier,d)
+  phi = numpy.arctan2(numpy.real(coeff), numpy.imag(coeff)) 
   delta = phi * period / (2 * numpy.pi)
   return delta, period
 
