@@ -21,9 +21,8 @@ import numpy
 from pnm import pnm_header
 from detect import detect_stripes
 from phase import find_phase
-from phase import kScanbarPixels
 
-def init():
+def init_graphics():
   pygame.init()
   window = pygame.display.set_mode((640, 100)) 
   pygame.display.set_caption('Cheese meter')
@@ -37,35 +36,39 @@ def draw(screen, ball_surface, bg_surface, pos):
   screen.blit(ball_surface, (pos, 30))
   pygame.display.update()
 
+def scanlines_per_frame(channels):
+  frames_per_second = 5
+  scanlines_per_second = 900 / channels   # Hardware measurement
+  return scanlines_per_second / frames_per_second
+
 def process():
-  screen, ball_surface, bg_surface = init()
   linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   phase = 0
-  scale = 300 * linewidth / kScanbarPixels
-  kSmoothingFactor = 20
-  kGraphicalSmoothingFactor = 1
-  values = range(kSmoothingFactor)
   n = 0
+  pos = -100
+  size = scanlines_per_frame(channels)
+  dpis = range(size)
+  screen, ball_surface, bg_surface = init_graphics()
+  draw(screen, ball_surface, bg_surface, pos)
   while True:
     scanline = sys.stdin.read(linesize)
     if len(scanline) != linesize:
       break
     sys.stdout.write(scanline)
-    n += 1
-    if detect_stripes:
+    if detect_stripes(scanline, channels):
       prev_phase = phase
       phase, period = find_phase(scanline, channels)
       if phase > prev_phase:
-        optical_dpi = scale / (phase - prev_phase)
-        values[n % kSmoothingFactor] = optical_dpi
-        pos = sum(values, 0.0) / len(values)
-        if pos > 600:
-          pos = 600  
-    else:
-      pos = -1000
-    if n % kGraphicalSmoothingFactor == 0:
+        optical_dpi = 300 / (phase - prev_phase)
+        dpis[n % size] = optical_dpi
+        pos = min(sum(dpis, 0.0) / len(dpis), 600)
+        if n % size == 0:
+          draw(screen, ball_surface, bg_surface, pos)
+    elif pos > 0:
+      pos = -100
       draw(screen, ball_surface, bg_surface, pos)
+    n += 1
 
 
 if __name__=='__main__':
