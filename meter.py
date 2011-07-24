@@ -57,11 +57,13 @@ def process():
       prev_phase = phase
       phase, period = find_phase(scanline, channels)
       if phase > prev_phase:
-        optical_dpi = (phase - prev_phase) * scale
+        optical_dpi = scale / (phase - prev_phase)
         values[n % kSmoothingFactor] = optical_dpi
         pos = sum(values, 0.0) / len(values)
         if pos > 600:
           pos = 600  
+    else:
+      pos = -1000
     if n % kGraphicalSmoothingFactor == 0:
       draw(screen, ball_surface, bg_surface, pos)
 
