@@ -51,9 +51,11 @@ def write_pnm(page_number, scanlines, channels):
   boop = pygame.mixer.Sound('boop.wav')
   w = len(scanlines[0]) // channels
   h = len(scanlines)
-  kCaddyAspectRatio = 1.25
+  kCaddyAspectRatio = 0.8
   kNoiseThreshold = 3
-  if h < kCaddyAspectRatio * w and h > kNoiseThreshold:
+  if h < kNoiseThreshold:
+    return False
+  if h < w / kCaddyAspectRatio
     boop.play()
     return False
   kDir = "/tmp/playground"
