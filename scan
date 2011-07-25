@@ -29,11 +29,16 @@ scan() {
   # Driver hacked such that -y 111 means "scan as long as you can"
   local ARGS="--clear-calibration -y 111 --mode=color"
 
+  # Ahoy! red = port = left, green = starboard = right
+  scanimage -d $S1 --color-filter=Red > /dev/null &
+  scanimage -d $S2 --color-filter=Green > /dev/null
+  wait
+
   scanimage -d $S1 $ARGS $@ |\
-    ./wobble.py | ./split.py 1 | ./viewer.py > /dev/null &
+    ./meter.py | ./wobble.py | ./split.py | ./viewer.py > /dev/null &
 
   scanimage -d $S2 $ARGS $@ |\
-    ./wobble.py | ./split.py | ./viewer.py > /dev/null &
+    ./wobble.py | ./split.py 1 | ./viewer.py > /dev/null &
 
   echo -n "Calibrating ... "
   sleep 5
