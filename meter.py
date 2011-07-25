@@ -37,8 +37,8 @@ def draw(screen, ball_surface, bg_surface, pos):
   pygame.display.update()
 
 def scanlines_per_frame(channels):
-  frames_per_second = 5
-  scanlines_per_second = 900 / channels   # Hardware measurement
+  frames_per_second = 8
+  scanlines_per_second = 700 / channels   # Hardware measurement
   return scanlines_per_second / frames_per_second
 
 def process():
