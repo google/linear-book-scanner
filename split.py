@@ -52,7 +52,7 @@ def write_pnm(page_number, scanlines, channels):
   w = len(scanlines[0]) // channels
   h = len(scanlines)
   kCaddyAspectRatio = 1.25
-  kNoiseTheshold = 3
+  kNoiseThreshold = 3
   if h < kCaddyAspectRatio * w and h > kNoiseThreshold:
     boop.play()
     return False
