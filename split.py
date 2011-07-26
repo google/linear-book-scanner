@@ -42,7 +42,7 @@ def detect_pagefeed(scanline):
   else:
     return False
 
-def write_pnm(page_number, scanlines, channels):
+def write_pnm(barcode, page_number, scanlines, channels):
   """Write out a single page image to the playground. Ignore
   any images that are smaller than the caddy. Use audio alerts
   to indicate what is happening."""
@@ -58,7 +58,7 @@ def write_pnm(page_number, scanlines, channels):
   if h < w / kCaddyAspectRatio:
     boop.play()
     return False
-  kDir = "/tmp/playground"
+  kDir = os.path.join("/tmp/playground", barcode)
   if not os.path.exists(kDir):
     os.mkdir(kDir)
   if channels == 3:
@@ -79,7 +79,7 @@ def write_pnm(page_number, scanlines, channels):
   beep.play()
   return True
 
-def process(page_number):
+def process(page_number, barcode):
   """Split up the image stream into separate pages, and store them.
   Take care of mirror image effect while we are at it."""
   linewidth, linecount, channels = pnm_header()
@@ -94,13 +94,16 @@ def process(page_number):
     sys.stdout.write(scanline)
     sys.stdout.flush()
     if detect_pagefeed(scanline):
-      if write_pnm(page_number, scanlines, channels):
+      if write_pnm(barcode, page_number, scanlines, channels):
         page_number += 2
       scanlines = []
     scanlines.append(scanline)
 
 if __name__ == "__main__":
   page_number = 0
-  if len(sys.argv) == 2:
+  barcode = "default"
+  if len(sys.argv) >= 2:
     page_number = int(sys.argv[1])
-  process(page_number)
+  if len(sys.argv) == 3:
+    barcode = sys.argv[2]
+  process(page_number, barcode)

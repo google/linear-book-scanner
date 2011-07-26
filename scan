@@ -14,6 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+get_barcode() {
+  while [ "${barcode:0:3}" != "978" ]; do
+    echo "Prepare for calibration then wand ISBN"
+    read barcode
+  done
+  isbn=${barcode:0:13}
+  xdg-open "http://books.google.com/books?vid=isbn${barcode}" 2> /dev/null
+}
+
 scan() {
   local SCANNERS=$(scanimage -L)
   if [ $(echo "$SCANNERS" | wc -l) != 2 ]; 
@@ -34,15 +43,16 @@ scan() {
   scanimage -d $S2 --color-filter=Green > /dev/null
   wait
 
+  get_barcode
+
   scanimage -d $S1 $ARGS $@ |\
-    ./meter.py | ./wobble.py | ./split.py | ./viewer.py > /dev/null &
+    ./meter.py | ./wobble.py | ./split.py 0 $barcode | ./viewer.py > /dev/null &
 
   scanimage -d $S2 $ARGS $@ |\
-    ./wobble.py | ./split.py 1 | ./viewer.py > /dev/null &
+    ./wobble.py | ./split.py 1 $barcode | ./viewer.py > /dev/null &
 
-  echo -n "Calibrating ... "
   sleep 5
-  echo "done."
+  echo -n "Calibration complete. Begin scanning."
 }
 
 scan $@
