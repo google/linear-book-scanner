@@ -27,8 +27,8 @@ def walk_through_lines(linesize, ratio):
     if len(scanline) != linesize:
       return None
     sys.stdout.write(scanline)
+    sys.stdout.flush()
     if detect_pagefeed(scanline):
-      sys.stdout.flush()
       return "Pagefeed"
   return scanline
 

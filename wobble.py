@@ -74,6 +74,7 @@ def straighten(prev_scanline, channels):
       line = interpolate(channels, prev_scanline, scanline,
                          prev_phase, phase, target)
       sys.stdout.write(line)
+      sys.stdout.flush()
       n += 1
       target += 1
   if n == 0:

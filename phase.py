@@ -72,3 +72,4 @@ if __name__ == "__main__":
       sys.stdout.write(scanlinearr)
     else:
       sys.stdout.write(scanline)
+    sys.stdout.flush()

@@ -52,3 +52,4 @@ if __name__ == "__main__":
       break
     if detect_stripes(scanline, channels):
       sys.stdout.write(scanline)
+      sys.stdout.flush()

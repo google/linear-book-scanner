@@ -45,6 +45,7 @@ def process():
     if len(scanline) != linesize:
       break
     sys.stdout.write(scanline)
+    sys.stdout.flush()
     if detect_stripes(scanline, channels):
       prev_phase = phase
       phase, period = find_phase(scanline, channels)
@@ -60,7 +61,6 @@ def process():
       pygame.display.update()
       screen.blit(bg_surface, (0,0))
     n += 1
-
 
 if __name__=='__main__':
   process()

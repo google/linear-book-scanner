@@ -92,8 +92,8 @@ def process(page_number):
     if page_number % 2 == 1:
       scanline = scanline[::-1]
     sys.stdout.write(scanline)
+    sys.stdout.flush()
     if detect_pagefeed(scanline):
-      sys.stdout.flush()
       if write_pnm(page_number, scanlines, channels):
         page_number += 2
       scanlines = []
