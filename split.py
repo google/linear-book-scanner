@@ -55,7 +55,7 @@ def write_pnm(page_number, scanlines, channels):
   kNoiseThreshold = 3
   if h < kNoiseThreshold:
     return False
-  if h < w / kCaddyAspectRatio
+  if h < w / kCaddyAspectRatio:
     boop.play()
     return False
   kDir = "/tmp/playground"
