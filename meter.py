@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import collections
 import pygame
 import sys
 import os
@@ -31,26 +32,14 @@ def init_graphics():
   bg_surface = pygame.image.load('ball_bg.png')
   return screen, ball_surface, bg_surface
 
-def draw(screen, ball_surface, bg_surface, pos):
-  screen.blit(bg_surface, (0,0))
-  screen.blit(ball_surface, (pos, 30))
-  pygame.display.update()
-
-def scanlines_per_frame(channels):
-  frames_per_second = 8
-  scanlines_per_second = 700 / channels   # Hardware measurement
-  return scanlines_per_second / frames_per_second
-
 def process():
   linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   phase = 0
   n = 0
-  pos = -100
-  size = scanlines_per_frame(channels)
-  dpis = range(size)
+  offscreen = -100
+  pos = offscreen
   screen, ball_surface, bg_surface = init_graphics()
-  draw(screen, ball_surface, bg_surface, pos)
   while True:
     scanline = sys.stdin.read(linesize)
     if len(scanline) != linesize:
@@ -59,15 +48,17 @@ def process():
     if detect_stripes(scanline, channels):
       prev_phase = phase
       phase, period = find_phase(scanline, channels)
-      if phase > prev_phase:
-        optical_dpi = 300 / (phase - prev_phase)
-        dpis[n % size] = optical_dpi
-        pos = min(sum(dpis, 0.0) / len(dpis), 600)
-        if n % size == 0:
-          draw(screen, ball_surface, bg_surface, pos)
+      speed = phase - prev_phase
+      if phase < prev_phase:
+        speed += period
+      pos = min(300 * speed, 600)
+      screen.blit(ball_surface, (pos, 30))
     elif pos > 0:
-      pos = -100
-      draw(screen, ball_surface, bg_surface, pos)
+      pos = offscreen
+      screen.blit(bg_surface, (0,0))
+    if n % (70 // channels) == 0:
+      pygame.display.update()
+      screen.blit(bg_surface, (0,0))
     n += 1
 
 
