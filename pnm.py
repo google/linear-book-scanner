@@ -61,7 +61,9 @@ def fix_pnm_file(filename):
   src = open(filename)
   magic_number, comment, dimensions, max_value = read_pnm_header(src)
   w = int(dimensions.split(" ")[0])
-  linesize = w * 3
+  linesize = w
+  if magic_number == "P6":
+    linesize *= 3
   h = filesize // linesize
   tmpfile, tmpfilename = tempfile.mkstemp()
   os.write(tmpfile, magic_number)
