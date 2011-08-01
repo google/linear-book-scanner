@@ -26,18 +26,18 @@ scan() {
   local S1=$(echo "$SCANNERS" | head -1 | cut -f2 -d'`' | cut -f1 -d"'")
   local S2=$(echo "$SCANNERS" | tail -1 | cut -f2 -d'`' | cut -f1 -d"'")
 
-  # Driver hacked such that -y 111 means "scan as long as you can"
-  local ARGS="--clear-calibration -y 111 --mode=color"
-
   # Ahoy! red = port = left, green = starboard = right
-  scanimage -d $S1 --color-filter=Red > /dev/null &
-  scanimage -d $S2 --color-filter=Green > /dev/null
+  scanimage -d $S1 --clear-calibration --color-filter=Red > /dev/null &
+  scanimage -d $S2 --clear-calibration --color-filter=Green > /dev/null
   wait
 
-  scanimage -d $S1 $ARGS $@ |\
+  # Driver hacked such that -y 111 means "scan as long as you can"
+  local ARGS="-y 111 --mode=color"
+
+  ./forever.py scanimage -d $S1 $ARGS $@ |\
     ./meter.py | ./wobble.py | ./split.py | ./viewer.py > /dev/null &
 
-  scanimage -d $S2 $ARGS $@ |\
+  ./forever.py scanimage -d $S2 $ARGS $@ |\
     ./wobble.py | ./split.py 1 | ./viewer.py > /dev/null &
 
   echo -n "Calibrating ... "
