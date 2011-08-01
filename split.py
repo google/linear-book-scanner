@@ -58,7 +58,7 @@ def write_pnm(page_number, scanlines, channels):
   if h < w / kCaddyAspectRatio:
     boop.play()
     return False
-  kDir = "/tmp/playground"
+  kDir = "/var/tmp/playground"
   if not os.path.exists(kDir):
     os.mkdir(kDir)
   if channels == 3:
