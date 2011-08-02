@@ -1,3 +1,12 @@
+Welcome, gentle reader.
+
+This software drives a featherweight book scanner. It was developed
+under Ubuntu but may work on other platforms as well. To verify the
+software is working correctly, run the "benchmark" program and make
+sure no errors are displayed.
+
+==================================
+
 Dependencies
 
 python-tk           gui
@@ -9,26 +18,28 @@ netpbm              testing
 
 ==================================
 
-To print a lifesize SVG, use Firefox on Linux to produce a PDF, then
-use Adobe Reader to send to the printer. For Firefox, Print > Print to
-File > Page Setup > Paper size: Tabloid > Options > Uncheck "Ignore
-Scaling and Shrink To Fit Page Width" > set everything to --blank-- in
-Header and Footer. For Adobe Reader, set the paper size to 11 x 17
-inches, and maximize the print resolution.
+It is not trivial to print a lifesize SVG file. One way is to use
+Firefox on Linux to produce a PDF, then use Adobe Reader to send to
+the printer. For Firefox, Print > Print to File > Page Setup > Paper
+size: Tabloid > Options > Uncheck "Ignore Scaling and Shrink To Fit
+Page Width" > set everything to --blank-- in Header and Footer. For
+Adobe Reader, set the paper size to 11 x 17 inches, and maximize the
+print resolution.
 
 ==================================
 
-To print the source code as a pamphlet, use enscript and modify ~/.lpoptions
+Print the source code as a pamphlet
 
 enscript --indent=10 --fancy-header --highlight=python \
   --media=tabloid --portrait --nup=2 --color=1 --nup-xpad=72 \
-  --nup-ypad=72 --style=emacs --underlay="Cheese" *.py -p foo.ps
+  --nup-ypad=72 --style=emacs --underlay="Cheese"  -o foo.ps *.py
 
-Default <PRINTERNAME> sides=two-sided-short-edge ColorModel=CMYK media=tabloid
+lp -o media=tabloid -o ColorModel=CMYK -o sides=two-sided-short-edge foo.ps
 
 ==================================
 
-Warning, this patch will destroy an unmodified device.
+This patch against sane-backends will physically destroy an unmodified
+scanning device. You have been warned.
 
 +++ genesys.c	2011-07-03 00:31:29.000000000 -0700
 @@ -5746,6 +5746,12 @@
