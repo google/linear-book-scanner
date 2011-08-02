@@ -59,13 +59,13 @@ echo "Phase"
 exercise ./phase.py 
 
 echo "Split"
-exercise ./split.py
+exercise ./split.py 0
 
 echo "Wobble"
 exercise ./wobble.py
 
 echo "ALL"
-exercise "./meter.py | ./wobble.py | ./viewer.py | ./split.py"
+exercise "./meter.py | ./wobble.py | ./viewer.py | ./split.py 0"
 
 echo "PNM"
 time ./pnm.py /tmp/playground/page-0.ppm

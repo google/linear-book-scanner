@@ -60,7 +60,7 @@ def write_pnm(barcode, page_number, scanlines, channels):
     return False
   kDir = os.path.join("/var/tmp/playground", barcode)
   if not os.path.exists(kDir):
-    os.mkdir(kDir)
+    os.makedirs(kDir)
   if channels == 3:
     magic_number = "P6"
     extension = "ppm"
