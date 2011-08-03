@@ -52,7 +52,7 @@ def write_pnm(barcode, page_number, scanlines, channels):
   w = len(scanlines[0]) // channels
   h = len(scanlines)
   kCaddyAspectRatio = 0.8
-  kNoiseThreshold = 3
+  kNoiseThreshold = 10
   if h < kNoiseThreshold:
     return False
   if h < w / kCaddyAspectRatio:
