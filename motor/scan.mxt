@@ -1,1 +1,1 @@
-PG 1LB SUA=150000' scanbarVM=50000MR -450000H' to startVM=400000MR -950000H' page turnVM=100000MR 400000H' to endVM=400000MR 1000000HBR SUEPG
+PG 1LB SUA=750000  ' accelerationD=5000000  ' decelerationP=0  ' position' scanbarVM=75000MA -1330000H 6000' fast to the endVM=600000MA -1330000H' pick up bookVM=200000MA 0H 00' fast to the startVM=600000MA 0HBR SUEPG
