@@ -70,7 +70,7 @@ def write_pnm(barcode, page_number, scanlines, channels):
   else:
     raise ValueError("Unsupported channel count: %d" % channels)
   header = "%s\n%d %d\n255\n" % (magic_number, w, h)
-  filename = os.path.join(kDir, "page-%d.%s" % (page_number, extension))
+  filename = os.path.join(kDir, "%06d.%s" % (page_number, extension))
   f = open(filename, "wb")
   f.write(header)
   for i in range(h):
