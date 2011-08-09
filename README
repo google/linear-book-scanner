@@ -9,11 +9,8 @@ sure no errors are displayed.
 
 Dependencies
 
-python-tk           gui
-python-imaging-tk   gui
-python-imaging      gui
 python-numeric      computation
-python-pygame       audio
+python-pygame       user interface
 netpbm              testing
 
 ==================================

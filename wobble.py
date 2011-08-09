@@ -17,6 +17,7 @@
 
 import sys
 import os
+import numpy
 from PIL import Image
 from pnm import pnm_header
 from phase import find_phase
@@ -30,15 +31,12 @@ def interpolate(channels, scanline, scanline_2, edge, edge_2, target):
     alpha = 1
   else:
     alpha = (target - edge) / (edge_2 - edge)
-  w = len(scanline) // channels
-  if channels == 3:
-    image_type = "RGB"
-  elif channels == 1:
-    image_type = "L"
-  a = Image.fromstring(image_type, (w, 1), scanline)
-  b = Image.fromstring(image_type, (w, 1), scanline_2)
-  c = Image.blend(a, b, alpha)
-  return c.tostring()
+  s1 = numpy.frombuffer(scanline, dtype=numpy.uint8)
+  s2 = numpy.frombuffer(scanline_2, dtype=numpy.uint8)
+  f1 = numpy.asfarray(s1)
+  f2 = numpy.asfarray(s2)
+  f3 = f2 * alpha + f1 * (1 - alpha)
+  return numpy.asarray(f3, dtype=numpy.uint8).tostring()
 
 def has_wrapped(prev_phase, phase, period):
   """Has the phase wrapped around?"""
