@@ -24,19 +24,17 @@ from phase import find_phase
 from detect import detect_stripes
 from split import insert_pagefeed
 
-def interpolate(channels, scanline, scanline_2, edge, edge_2, target):
-  """Alpha blend two scanlines. Takes two scanlines and their edges, and
-  returns an interpolated scanline with the edge where we want it."""
-  if edge == edge_2:
+def interpolate(channels, scanline, scanline_2, phase, phase_2, target):
+  """Alpha blend two scanlines. Takes two scanlines and their phases, and
+  returns an interpolated scanline with the phase where we want it."""
+  if phase == phase_2:
     alpha = 1
   else:
-    alpha = (target - edge) / (edge_2 - edge)
+    alpha = (target - phase) / (phase_2 - phase)
   s1 = numpy.frombuffer(scanline, dtype=numpy.uint8)
   s2 = numpy.frombuffer(scanline_2, dtype=numpy.uint8)
-  f1 = numpy.asfarray(s1)
-  f2 = numpy.asfarray(s2)
-  f3 = f2 * alpha + f1 * (1 - alpha)
-  return numpy.asarray(f3, dtype=numpy.uint8).tostring()
+  f = numpy.asfarray(s2) * alpha + numpy.asfarray(s1) * (1 - alpha)
+  return numpy.asarray(f, dtype=numpy.uint8).tostring()
 
 def has_wrapped(prev_phase, phase, period):
   """Has the phase wrapped around?"""
