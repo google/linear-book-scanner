@@ -15,8 +15,7 @@
 # limitations under the License.
 
 import sys
-import Tkinter
-from PIL import Image, ImageTk, ImageDraw
+import pygame
 from pnm import pnm_header
 from split import detect_pagefeed
 
@@ -42,36 +41,32 @@ def process(ratio):
   linesize = linewidth * channels
   w = linewidth // ratio
   if channels == 1:
-    image_type = "L"
+    image_type = "P"
+    palette = tuple([(i, i, i) for i in range(256)])
   elif channels == 3:
     image_type = "RGB"
-  im = Image.new(image_type, (w, h))
-  draw = ImageDraw.Draw(im)
-  root = Tkinter.Tk()
-  root.geometry("%dx%d" % (w, h))
-  root.title('Pass Through Viewer')
-  tkpi = ImageTk.PhotoImage(im)
-  label_image = Tkinter.Label(root, image=tkpi, width=w, height=h)
-  label_image.place(x=0, y=0, width=w, height=h)
+  window = pygame.display.set_mode((w, h))
+  screen = pygame.display.get_surface()
+  pygame.display.set_caption('Pass Through Viewer')
   while True:
+    if y % h == 0:
+      pygame.display.set_caption('Pass Through Viewer - %d' % n)
     scanline = walk_through_lines(linesize, ratio)
     n += ratio
     if scanline == None:
       break
-    if y % h == 0:
-      root.title('Pass Through Viewer - %d' % n)
     if scanline == "Pagefeed":
       y = 0
     else:
-      image_line = Image.fromstring(image_type, (linewidth, 1), scanline)
-      im.paste(image_line.resize((w, 1)), (0, y % h))
+      image_line = pygame.image.frombuffer(scanline, (linewidth, 1), image_type)
+      if channels == 1:
+        image_line.set_palette(palette)
+      scaled_line = pygame.transform.scale(image_line, (w, 1))
+      screen.blit(scaled_line, (0, y % h))
     y += 1
     if y % 40 == 0 or scanline == "Pagefeed":
-      draw.line((0, y % h, w, y % h), fill="green")
-      tkpi = ImageTk.PhotoImage(im)
-      label_image.configure(image=tkpi)
-      root.after(1, root.quit)
-      root.mainloop(0)
+      pygame.draw.line(screen, (0, 255, 0), (0, y % h), (w, y % h))
+      pygame.display.update()
 
 if __name__ == "__main__":
   ratio = 5

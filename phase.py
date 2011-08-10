@@ -16,7 +16,6 @@
 
 import sys
 import numpy
-from PIL import Image
 from pnm import pnm_header
 from detect import extent_of_stripes
 
@@ -50,8 +49,8 @@ def find_phase(scanline, channels):
   global carrier
   if carrier == None:
     carrier = calculate_windowed_complex_exponential(period, length)
-  coeff = numpy.dot(carrier,d)
-  phi = numpy.arctan2(numpy.real(coeff), numpy.imag(coeff)) 
+  coeff = numpy.dot(carrier, d)
+  phi = numpy.arctan2(numpy.real(coeff), numpy.imag(coeff))
   delta = phi * period / (2 * numpy.pi)
   return delta, period
 
