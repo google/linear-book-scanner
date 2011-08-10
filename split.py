@@ -56,7 +56,7 @@ def write_pnm(barcode, page_number, scanlines, channels):
   if h < kNoiseThreshold:
     return False
   if h < w / kCaddyAspectRatio:
-    boop.play()
+    # boop.play()
     return False
   kDir = os.path.join("/var/tmp/playground", barcode)
   if not os.path.exists(kDir):
