@@ -44,7 +44,7 @@ scan() {
   local ARGS="-y 111 --mode=gray"
 
   ./forever.py scanimage -d $S1 $ARGS $@ |\
-    ./meter.py | ./wobble.py | ./split.py 0 $barcode | ./viewer.py > /dev/null &
+    ./wobble.py | ./split.py 0 $barcode | ./viewer.py > /dev/null &
 
   ./forever.py scanimage -d $S2 $ARGS $@ |\
     ./wobble.py | ./split.py 1 $barcode | ./viewer.py > /dev/null &
