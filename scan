@@ -19,43 +19,15 @@ get_barcode() {
   read barcode
   isbn=${barcode:0:13}
   xdg-open "http://books.google.com/books?vid=isbn${barcode}" 2> /dev/null
+  DIR=/var/tmp/playground/$barcode
+  mkdir -p $DIR && cd $DIR
 }
 
 scan() {
-  echo "finding scanners"
-  local SCANNERS=$(scanimage -L)
-  if [ $(echo "$SCANNERS" | wc -l) != 2 ]; 
-  then
-    echo "Error. I need two scanbars to proceed, and all I have is:"
-    echo "$SCANNERS"
-    exit 1
-  fi
-
-  local S1=$(echo "$SCANNERS" | grep "LiDE 110" | cut -f2 -d'`' | cut -f1 -d"'")
-  local S2=$(echo "$SCANNERS" | grep "LiDE 210" | cut -f2 -d'`' | cut -f1 -d"'")
-
-  echo "testing scanners"
-  # red = left, bluish = right, just like 3D glasses
-  scanimage -d "$S1" --color-filter=Red > /dev/null &
-  sleep 2
-  scanimage -d "$S2" --color-filter=Blue > /dev/null
-  wait
-
-  get_barcode
-
-  # Driver hacked such that -y 111 means "scan as long as you can"
-  local ARGS="-y 111 --mode=gray"
-
-  ./forever.py scanimage -d $S1 $ARGS $@ |\
-    ./wobble.py | ./split.py 0 $barcode | ./viewer.py > /dev/null &
-
-  ./forever.py scanimage -d $S2 $ARGS $@ |\
-    ./wobble.py | ./split.py 1 $barcode | ./viewer.py > /dev/null &
+  stty -F /dev/ttyUSB0 9600
+  cat /dev/ttyUSB0 | scanimage -b --batch-prompt --page-height 355 -y 355 \
+    --source "ADF Duplex" --mode Color $@
 }
 
-# Catch INT signal from Ctrl-C
-trap "killall -SIGTERM scanimage; exit 0" INT
-
-scan $@
-wait
-
+get_barcode
+scan
