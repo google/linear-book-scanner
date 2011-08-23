@@ -17,16 +17,19 @@
 get_barcode() {
   echo "Please type or wand barcode"
   read barcode
-  isbn=${barcode:0:13}
-  xdg-open "http://books.google.com/books?vid=isbn${barcode}" 2> /dev/null
+  if [ ${barcode:0:3} == "978" ]; then
+    isbn=${barcode:0:13}
+    xdg-open "http://books.google.com/books?vid=isbn${barcode}" 2> /dev/null
+  fi
   DIR=/var/tmp/playground/$barcode
   mkdir -p $DIR && cd $DIR
 }
 
 scan() {
   stty -F /dev/ttyUSB0 9600
-  cat /dev/ttyUSB0 | scanimage -b --batch-prompt --page-height 355 -y 355 \
-    --source "ADF Duplex" --mode Color $@
+  cat /dev/ttyUSB0 | scanimage --batch=%06d.pnm --batch-prompt \
+    --page-height 355 -y 355 \
+    --source "ADF Duplex" --mode Color --resolution 300 $@
 }
 
 get_barcode
