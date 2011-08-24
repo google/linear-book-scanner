@@ -22,28 +22,36 @@ import sys
 import os.path
 
 def main(barcode):
-  w = 1400
+  w = 1280
   h = 800
-  window = pygame.display.set_mode((w, h))
+  window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
   screen = pygame.display.get_surface()
   current = ""
   while True:
     time.sleep(0.5)
-    files = sorted(glob.glob('/var/tmp/playground/%s/*.ppm' % barcode))
+    for event in pygame.event.get():
+      if (event.type == pygame.KEYUP) or (event.type == pygame.KEYDOWN):
+        window = pygame.display.set_mode((w, h))
+        sys.exit()
+    files = sorted(glob.glob('/var/tmp/playground/%s/*.pnm' % barcode))
     if len(files) < 2:
       continue
     latest = files[-1]
     if latest != current:
-      print files
+      basename, extension = os.path.splitext(os.path.basename(latest))
+      if int(basename) % 2 == 1:
+        continue
       pygame.display.set_caption("Barcode: %s [ %s %s ]" %
                                  (barcode,
-                                  os.path.basename(files[-1]),
-                                  os.path.basename(files[-2])))
-      image_a = pygame.image.load(files[-1])
-      image_b = pygame.image.load(files[-2])
-      surface_a = pygame.transform.smoothscale(image_a, (w / 2, h))
-      surface_b = pygame.transform.smoothscale(image_b, (w / 2, h))
-      screen.blit(surface_a, (0, 0))
+                                  os.path.basename(files[-2]),
+                                  os.path.basename(files[-1])))
+      image_a = pygame.image.load(files[-2])
+      image_b = pygame.image.load(files[-1])
+      w_prime = image_a.get_width() * h / image_a.get_height()
+      surface_a = pygame.transform.smoothscale(image_a, (w_prime, h))
+      surface_b = pygame.transform.smoothscale(image_b, (w_prime, h))
+      surface_a = pygame.transform.flip(surface_a, True, False)
+      screen.blit(surface_a, (w / 2 - w_prime, 0))
       screen.blit(surface_b, (w / 2, 0))
       pygame.display.update()
       current = latest
