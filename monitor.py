@@ -22,9 +22,6 @@ import sys
 import os.path
 import subprocess
 
-window = None
-fullscreen = True
-
 def blue():
   return (128, 128, 255)
 
@@ -126,7 +123,6 @@ def draw(screen, basename_a, basename_b, surface_a, surface_b, w, epsilon):
 
 
 def main(barcode):
-  global window
   pygame.init()
   beep = pygame.mixer.Sound('beep.wav')
   h = pygame.display.Info().current_h
