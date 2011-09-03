@@ -78,7 +78,10 @@ def handle_user_input():
     if event.type == pygame.MOUSEBUTTONDOWN:
       if event.button == 1:
         return event.pos
-    if event.type == pygame.QUIT:
+    elif event.type == pygame.MOUSEBUTTONUP:
+      if event.button == 1:
+        return 0,0
+    elif event.type == pygame.QUIT:
       pygame.quit()
       sys.exit()
     elif (event.type == pygame.KEYDOWN):
