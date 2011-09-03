@@ -72,15 +72,14 @@ def process_images(h, filename_a, filename_b):
   return surface_a, surface_b, crop_a, crop_b
 
 def handle_user_input():
-  h = pygame.display.Info().current_h
-  w = pygame.display.Info().current_w
+  pos = None
   for event in pygame.event.get():
     if event.type == pygame.MOUSEBUTTONDOWN:
       if event.button == 1:
-        return event.pos
+        pos = event.pos
     elif event.type == pygame.MOUSEBUTTONUP:
       if event.button == 1:
-        return 0,0
+        pos = 0,0
     elif event.type == pygame.QUIT:
       pygame.quit()
       sys.exit()
@@ -88,7 +87,7 @@ def handle_user_input():
       if event.key == pygame.K_ESCAPE or event.key == pygame.K_q: 
         pygame.quit()
         sys.exit()
-  return None
+  return pos
 
 def get_labels(filename_a, filename_b):
   basename_a, dummy = os.path.splitext(os.path.basename(filename_a))
