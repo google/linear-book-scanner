@@ -22,8 +22,6 @@ import sys
 import os.path
 import subprocess
 
-window = None
-
 def blue():
   return (128, 128, 255)
 
@@ -42,8 +40,28 @@ def clearscreen(screen):
   background.fill(blue())
   screen.blit(background, (0,0))
 
+def process_images(h, filename_a, filename_b):
+  kSaddleHeight = 3600
+  kSensorOffsetA = 700
+  kSensorOffsetB = 300
+  image_a = pygame.image.load(filename_a)
+  image_b = pygame.image.load(filename_b)
+  crop_a = pygame.Surface((image_a.get_width(), kSaddleHeight))
+  crop_a.blit(image_a, (0, 0), (0, kSensorOffsetA,
+                                image_a.get_width(),
+                                kSensorOffsetA + kSaddleHeight))
+  crop_b = pygame.Surface((image_a.get_width(), kSaddleHeight))
+  crop_b.blit(image_b, (0, 0), (0, kSensorOffsetB,
+                                image_b.get_width(),
+                                kSensorOffsetB + kSaddleHeight))
+  w_prime = image_a.get_width() * h / kSaddleHeight
+  surface_a = pygame.transform.smoothscale(crop_a, (w_prime, h))
+  surface_b = pygame.transform.smoothscale(crop_b, (w_prime, h))
+  surface_a = pygame.transform.flip(surface_a, True, False)
+  return surface_a, surface_b, w_prime
+
+ 
 def main(barcode):
-  global window
   pygame.init()
   beep = pygame.mixer.Sound('beep.wav')
   h = pygame.display.Info().current_h
@@ -81,19 +99,14 @@ def main(barcode):
                                  (barcode,
                                   os.path.basename(files[-2]),
                                   os.path.basename(files[-1])))
-      image_a = pygame.image.load(files[-2])
-      image_b = pygame.image.load(files[-1])
-      w_prime = image_a.get_width() * h / image_a.get_height()
-      surface_a = pygame.transform.smoothscale(image_a, (w_prime, h))
-      surface_b = pygame.transform.smoothscale(image_b, (w_prime, h))
-      surface_a = pygame.transform.flip(surface_a, True, False)
       screen = pygame.display.get_surface()
       clearscreen(screen)
       epsilon = w // 100
+      render_text(screen, basename_a, (-50, 0))
+      render_text(screen, basename_b, (w - 110, 0))
+      surface_a, surface_b, w_prime = process_images(h, files[-2], files[-1])
       screen.blit(surface_a, (w / 2 - w_prime - epsilon, 0))
       screen.blit(surface_b, (w / 2 + epsilon, 0))
-      render_text(screen, basename_a, (0, 0))
-      render_text(screen, basename_b, (w - 110, 0))
       pygame.display.update()
       beep.play()
       current = latest
