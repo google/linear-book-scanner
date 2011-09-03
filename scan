@@ -21,7 +21,7 @@ get_barcode() {
     barcode="default"
   elif [ ${barcode:0:3} = "978" ]; then
     isbn=${barcode:0:13}
-    xdg-open "http://books.google.com/books?vid=isbn${barcode}" 2> /dev/null
+#    xdg-open "http://books.google.com/books?vid=isbn${barcode}" 2> /dev/null
   fi
   DIR=/var/tmp/playground/$barcode
   mkdir -p $DIR && cd $DIR

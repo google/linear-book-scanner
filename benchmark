@@ -68,8 +68,8 @@ echo "ALL"
 exercise "./meter.py | ./wobble.py | ./viewer.py | ./split.py 0"
 
 echo "PNM"
-time ./pnm.py /var/tmp/playground/default/page-0.ppm
-time ./pnm.py /var/tmp/playground/default/page-0.pgm
+time ./pnm.py /var/tmp/playground/default/000000.ppm
+time ./pnm.py /var/tmp/playground/default/000000.pgm
 
 LOC=$(cat *.py | grep -v "^#" | wc -l)
 echo -e "\nBrought to you by $LOC lines of python."

@@ -43,12 +43,12 @@ def has_wrapped(prev_phase, phase, period):
   else:
     return False
 
-def straighten(prev_scanline, channels):
+def straighten(prev_scanline, channels, instream, outstream):
   """Straighten an entire book page"""
   linesize = len(prev_scanline)
   w = linesize // channels
   prev_phase, period = find_phase(prev_scanline, channels)
-  scanline = sys.stdin.read(linesize)
+  scanline = instream.read(linesize)
   if len(scanline) != linesize:
     return False
   phase, period = find_phase(scanline, channels)
@@ -60,7 +60,7 @@ def straighten(prev_scanline, channels):
       prev_phase -= period
     if phase < target:
       prev_phase, prev_scanline = phase, scanline
-      scanline = sys.stdin.read(linesize)
+      scanline = instream.read(linesize)
       if len(scanline) != linesize:
         return False
       phase, period = find_phase(scanline, channels)
@@ -69,24 +69,24 @@ def straighten(prev_scanline, channels):
     else:
       line = interpolate(channels, prev_scanline, scanline,
                          prev_phase, phase, target)
-      sys.stdout.write(line)
-      sys.stdout.flush()
+      outstream.write(line)
+      outstream.flush()
       n += 1
       target += 1
   if n == 0:
     return
   insert_pagefeed(linesize)
 
-def process():
-  """Dewobble the entire image coming from standard input."""
+def process(instream, outstream):
+  """Dewobble the entire image."""
   linewidth, linecount, channels = pnm_header()
   linesize = linewidth * channels
   while True:
-    scanline = sys.stdin.read(linesize)
+    scanline = instream.read(linesize)
     if len(scanline) != linesize:
       break
     if detect_stripes(scanline, channels):
-      straighten(scanline, channels)
+      straighten(scanline, channels, instream, outstream)
 
 if __name__ == "__main__":
-  process()
+  process(sys.stdin, sys.stdout)
