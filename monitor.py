@@ -76,7 +76,7 @@ def handle_user_input():
         pos = event.pos
     elif event.type == pygame.MOUSEBUTTONUP:
       if event.button == 1:
-        pos = 0,0
+        pos = -1000, -1000
     elif event.type == pygame.QUIT:
       pygame.quit()
       sys.exit()
