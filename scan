@@ -15,10 +15,7 @@
 # limitations under the License.
 
 vist_playground() {
-  DIR=/var/tmp/playground/"$1"
-  if [ -d "$DIR" ]; then
-    mv "$DIR" "$DIR"-`date +%Y%m%d-%H:%m:%S`
-  fi
+  DIR=/var/tmp/playground/"$1"_`date +%s`
   mkdir -p $DIR && cd $DIR
 }
 
