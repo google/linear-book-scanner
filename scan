@@ -14,17 +14,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-vist_playground() {
-  DIR=/var/tmp/playground/"$1"_`date +%s`
-  mkdir -p $DIR && cd $DIR
-}
-
 get_barcode() {
   echo "Please type or wand barcode"
   read barcode
   if [ -z $barcode ]; then
     barcode="default"
   fi
+  barcode=${barcode}_$(date +%s)
 }
 
 scan() {
@@ -37,7 +33,8 @@ scan() {
   cat $SERIAL_DEVICE | scanimage --batch=%06d.pnm --batch-prompt \
     --page-height 355 -y 355 \
     --source "ADF Duplex" --mode Color --resolution 300 $@
-  visit_playground $barcode
+  DIR=/var/tmp/playground/"$1"
+  mkdir -p $DIR && cd $DIR
 }
 
 HERE=`pwd`
