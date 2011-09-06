@@ -33,12 +33,13 @@ def render_text(screen, text, position):
   background.fill(blue())
   if position == "upperleft":
     pos = (0, 0)
-    screen.blit(background, pos)
-    screen.blit(text, pos)
   elif position == "upperright":
     pos = (screen.get_width() - text.get_width(), 0)
-    screen.blit(background, pos)
-    screen.blit(text, pos)
+  elif position == "center":
+    pos = (screen.get_width() // 2 - text.get_width() // 2,
+           screen.get_height() // 2)
+  screen.blit(background, pos)
+  screen.blit(text, pos)
 
 def clearscreen(screen):
   background = pygame.Surface(screen.get_size())
@@ -94,65 +95,70 @@ def get_labels(filename_a, filename_b):
 def mtime(filename):
   return os.stat(filename).st_mtime
 
-def zoom(screen, click, epsilon, w, surface_a, surface_b, crop_a, crop_b):
+def zoombox(screen, click, surface, crop, surface_x0):
+  w = pygame.display.Info().current_w
   kZoomSize = w / 3
   zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)  
-  if click[0] > w // 2:
-    x = click[0] - (w // 2 + epsilon)
-    x = x * crop_b.get_width() // surface_b.get_width()
-    y = click[1] * crop_b.get_height() // surface_b.get_height()
-    if x < 0 or x >= crop_b.get_width():
-      return
-    screen.blit(crop_b, zoombox_pos, 
-                (x - kZoomSize, y - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
-  else:
-    x = click[0] - (w // 2 - epsilon - surface_a.get_width())
-    x = x * crop_a.get_width() // surface_a.get_width()      
-    y = click[1] * crop_a.get_height() // surface_a.get_height()
-    if x < 0 or x >= crop_a.get_width():
-      return
-    screen.blit(crop_a, zoombox_pos,
-                (x - kZoomSize, y - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
+  x = click[0] - surface_x0
+  x = x * crop.get_width() // surface.get_width()
+  y = click[1] * crop.get_height() // surface.get_height()
+  if x < 0 or x >= crop.get_width():
+    return
+  screen.blit(crop, zoombox_pos, 
+              (x - kZoomSize, y - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
 
-def draw(screen, basename_a, basename_b, surface_a, surface_b, w, epsilon):
+def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
+  w = pygame.display.Info().current_w
+  kZoomSize = w / 3
+  zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)  
+  if click[0] < w // 2:
+    surface_x0 = w // 2 - epsilon - surface_a.get_width()
+    zoombox(screen, click, surface_a, crop_a, surface_x0)
+  else:
+    surface_x0 = w // 2 + epsilon
+    zoombox(screen, click, surface_b, crop_b, surface_x0)
+
+def draw(screen, basename_a, basename_b, surface_a, surface_b, epsilon):
+  w = pygame.display.Info().current_w
   clearscreen(screen)
   render_text(screen, str(basename_a), "upperleft")
   render_text(screen, str(basename_b), "upperright")
   screen.blit(surface_a, (w // 2 - surface_a.get_width() - epsilon, 0))
   screen.blit(surface_b, (w // 2 + epsilon, 0))
 
-
 def main(barcode):
   pygame.init()
   beep = pygame.mixer.Sound('beep.wav')
   h = pygame.display.Info().current_h
   w = pygame.display.Info().current_w
+  epsilon = w // 100
   window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   current = ""
+  clearscreen(screen)
+  render_text(screen, "Begin Scanning", "center")
+  pygame.display.update()
   while True:
     time.sleep(0.5)
     click = handle_user_input()
-    files = sorted(glob.glob('/var/tmp/playground/%s/*.pnm' % barcode),
-                   key=mtime)
+    files = sorted(glob.glob('/var/tmp/playground/%s/*.pnm' % barcode))
     if len(files) < 2:
       continue
     latest = files[-2]
     if latest != current:
-      basename_a, basename_b = get_labels(files[-1], files[-2])
+      basename_a, basename_b = get_labels(files[-2], files[-1])
       if basename_b % 2 == 1:
         continue
-      surface_a, surface_b, crop_a, crop_b = process_images(h, files[-1], 
-                                                            files[-2])
-      epsilon = w // 100
-      draw(screen, basename_a, basename_b, surface_a, surface_b, w, epsilon)
+      surface_a, surface_b, crop_a, crop_b = process_images(h, files[-2], 
+                                                            files[-1])
+      draw(screen, basename_a, basename_b, surface_a, surface_b, epsilon)
       pygame.display.update()
       beep.play()
       current = latest
     if click:
-      draw(screen, basename_a, basename_b, surface_a, surface_b, w, epsilon)
-      zoom(screen, click, epsilon, w, surface_a, surface_b, crop_a, crop_b)
+      draw(screen, basename_a, basename_b, surface_a, surface_b, epsilon)
+      zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b)
       pygame.display.update()
 
 if __name__ == "__main__":
