@@ -19,17 +19,19 @@ get_barcode() {
   read barcode
   if [ -z $barcode ]; then
     barcode="default"
-  elif [ ${barcode:0:3} = "978" ]; then
-    isbn=${barcode:0:13}
-#    xdg-open "http://books.google.com/books?vid=isbn${barcode}" 2> /dev/null
   fi
   DIR=/var/tmp/playground/$barcode
   mkdir -p $DIR && cd $DIR
 }
 
 scan() {
-  stty -F /dev/ttyUSB0 9600
-  cat /dev/ttyUSB0 | scanimage --batch=%06d.pnm --batch-prompt \
+  if [ `uname` = "Linux" ]; then
+    SERIAL_DEVICE=/dev/ttyUSB0
+    stty -F $SERIAL_DEVICE 9600
+  else
+    SERIAL_DEVICE=/dev/cu.usbserial-FTC8534M
+  fi
+  cat $SERIAL_DEVICE | scanimage --batch=%06d.pnm --batch-prompt \
     --page-height 355 -y 355 \
     --source "ADF Duplex" --mode Color --resolution 300 $@
 }
