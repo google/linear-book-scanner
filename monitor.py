@@ -71,6 +71,7 @@ def process_images(h, filename_a, filename_b):
 
 def handle_user_input():
   pos = None
+  screen = None
   for event in pygame.event.get():
     if event.type == pygame.MOUSEBUTTONDOWN:
       if event.button == 1:
@@ -85,12 +86,16 @@ def handle_user_input():
       if event.key == pygame.K_ESCAPE or event.key == pygame.K_q: 
         pygame.quit()
         sys.exit()
-  return pos
+      elif event.key == pygame.K_F11:
+        h = pygame.display.Info().current_h
+        w = pygame.display.Info().current_w
+        window = pygame.display.set_mode((w, h))
+        screen = pygame.display.get_surface()
+  return pos, screen
 
-def get_labels(filename_a, filename_b):
-  basename_a, dummy = os.path.splitext(os.path.basename(filename_a))
-  basename_b, dummy = os.path.splitext(os.path.basename(filename_b))
-  return int(basename_a), int(basename_b)
+def get_label(filename):
+  basename, dummy = os.path.splitext(os.path.basename(filename))
+  return int(basename)
 
 def mtime(filename):
   return os.stat(filename).st_mtime
@@ -141,17 +146,20 @@ def main(barcode):
   pygame.display.update()
   while True:
     time.sleep(0.5)
-    click = handle_user_input()
-    files = sorted(glob.glob('/var/tmp/playground/%s/*.pnm' % barcode))
+    click, newscreen = handle_user_input()
+    if newscreen:
+      screen = newscreen
+      current = ""
+    files = sorted(glob.glob('/var/tmp/playground/%s/*[13579].pnm' % barcode))
     if len(files) < 2:
       continue
-    latest = files[-2]
+    latest = files[-1]
     if latest != current:
-      basename_a, basename_b = get_labels(files[-2], files[-1])
-      if basename_b % 2 == 1:
-        continue
-      surface_a, surface_b, crop_a, crop_b = process_images(h, files[-2], 
-                                                            files[-1])
+      basename_b = get_label(latest)
+      basename_a = basename_b - 1
+      filename_a = '/var/tmp/playground/%s/%06d.pnm' % (barcode, basename_a)
+      surface_a, surface_b, crop_a, crop_b = process_images(h, latest,
+                                                            filename_a)
       draw(screen, basename_a, basename_b, surface_a, surface_b, epsilon)
       pygame.display.update()
       beep.play()
