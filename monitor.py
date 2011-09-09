@@ -23,7 +23,7 @@ import os.path
 import subprocess
 
 def blue():
-  return (128, 128, 255)
+  return (70, 120, 173)
 
 def render_text(screen, text, position):
   font = pygame.font.SysFont('Courier', 28, bold=True)
