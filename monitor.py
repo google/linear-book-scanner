@@ -21,6 +21,7 @@ import pygame
 import sys
 import os.path
 import subprocess
+import urllib
 
 def blue():
   return (70, 120, 173)
@@ -59,7 +60,7 @@ def process_images(h, filename_a, filename_b):
                                 kSensorOffsetA,
                                 crop_a.get_width(),
                                 crop_a.get_height()))
-  crop_b.blit(image_b, (0, 0), (0, 
+  crop_b.blit(image_b, (0, 0), (0,
                                 kSensorOffsetB,
                                 crop_b.get_width(),
                                 crop_b.get_height()))
@@ -83,7 +84,7 @@ def handle_user_input():
       pygame.quit()
       sys.exit()
     elif (event.type == pygame.KEYDOWN):
-      if event.key == pygame.K_ESCAPE or event.key == pygame.K_q: 
+      if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
         pygame.quit()
         sys.exit()
       elif event.key == pygame.K_F11:
@@ -103,19 +104,19 @@ def mtime(filename):
 def zoombox(screen, click, surface, crop, surface_x0):
   w = pygame.display.Info().current_w
   kZoomSize = w / 3
-  zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)  
+  zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)
   x = click[0] - surface_x0
   x = x * crop.get_width() // surface.get_width()
   y = click[1] * crop.get_height() // surface.get_height()
   if x < 0 or x >= crop.get_width():
     return
-  screen.blit(crop, zoombox_pos, 
+  screen.blit(crop, zoombox_pos,
               (x - kZoomSize, y - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
 
 def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
   w = pygame.display.Info().current_w
   kZoomSize = w / 3
-  zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)  
+  zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)
   if click[0] < w // 2:
     surface_x0 = w // 2 - epsilon - surface_a.get_width()
     zoombox(screen, click, surface_a, crop_a, surface_x0)
@@ -131,6 +132,17 @@ def draw(screen, basename_a, basename_b, surface_a, surface_b, epsilon):
   screen.blit(surface_a, (w // 2 - surface_a.get_width() - epsilon, 0))
   screen.blit(surface_b, (w // 2 + epsilon, 0))
 
+def get_bibliography(barcode):
+  if barcode[0:3] == "978":
+    url = ("http://books.google.com/books/download/"
+           "?vid=isbn%s&output=enw&source=cheese" % barcode[0:13])
+    bib = urllib.urlopen(url).read()
+    print bib
+    for line in bib.split("\n"):
+      if line[0:2] == "%T":
+        return line[3:].strip()
+  return "Unknown Barcode: %s" % barcode.split("_")[0]
+
 def main(barcode):
   pygame.init()
   beep = pygame.mixer.Sound('beep.wav')
@@ -142,7 +154,7 @@ def main(barcode):
   pygame.display.set_caption("Barcode: %s" % barcode)
   current = ""
   clearscreen(screen)
-  render_text(screen, "Begin Scanning", "center")
+  render_text(screen, get_bibliography(barcode), "center")
   pygame.display.update()
   while True:
     time.sleep(0.5)
