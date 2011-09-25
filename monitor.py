@@ -23,33 +23,34 @@ import os.path
 import subprocess
 import urllib
 
+paused = False
+image_number = 1
+
 def blue():
   """Original scansation blue, handed down from antiquity"""
   return (70, 120, 173)
 
 def clearscreen(screen):
-  """And G-d said, "Let there be light!"""
+  """And G-d said, "Let there be blue light!"""
   background = pygame.Surface(screen.get_size())
   background = background.convert()
   background.fill(blue())
   screen.blit(background, (0,0))
 
-def render_text(screen, text, position):
+def render_text(screen, msg, position):
   """Write messages to screen, such as the image number"""
+  pos = [0, 0]
   font = pygame.font.SysFont('Courier', 28, bold=True)
-  text = font.render(text, 1, (255, 255, 255))
-  background = pygame.Surface(text.get_size())
-  background = background.convert()
-  background.fill(blue())
-  if position == "upperleft":
-    pos = (0, 0)
-  elif position == "upperright":
-    pos = (screen.get_width() - text.get_width(), 0)
-  elif position == "center":
-    pos = (screen.get_width() // 2 - text.get_width() // 2,
-           screen.get_height() // 2)
-  screen.blit(background, pos)
-  screen.blit(text, pos)
+  for line in msg.split("\n"):
+    text = font.render(line.strip(), 1, (255, 255, 255))
+    background = pygame.Surface(text.get_size())
+    background = background.convert()
+    background.fill(blue())
+    if position == "upperright":
+      pos[0] = screen.get_width() - text.get_width()
+    screen.blit(background, pos)
+    screen.blit(text, pos)
+    pos[1] += 30
 
 def process_images(h, filename_a, filename_b):
   """Crop out the saddle, and reverse one of the sensors.
@@ -75,10 +76,12 @@ def process_images(h, filename_a, filename_b):
   surface_b = pygame.transform.smoothscale(crop_b, (w_prime, h))
   return surface_a, surface_b, crop_a, crop_b
 
-def handle_user_input():
+def handle_user_input(playground):
   """ F11 drops us out of full screen mode.
       ESC or Q quits the program
       Mouseclick creats a zoombox while mouse is down"""
+  global paused
+  global image_number
   pos = None
   screen = None
   for event in pygame.event.get():
@@ -97,6 +100,29 @@ def handle_user_input():
         w = pygame.display.Info().current_w
         window = pygame.display.set_mode((w, h))
         screen = pygame.display.get_surface()
+      elif event.key == pygame.K_SPACE:
+        paused = not paused
+      elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
+        paused = True
+        image_number -= 2
+      elif event.key == pygame.K_PAGEUP:
+        paused = True
+        image_number -= 10
+      elif event.key == pygame.K_RIGHT or event.key == pygame.K_DOWN:
+        paused = True
+        image_number += 2
+      elif event.key == pygame.K_PAGEDOWN:
+        paused = True
+        image_number += 10
+  if image_number < 1:
+    image_number = 1
+  while image_number > 1:
+    filename = '%s/%06d.pnm' % (playground, image_number)
+    if os.path.exists(filename):
+      break
+    image_number -= 2
+        
+
   return pos, screen
 
 def wait_for_mouseup():
@@ -104,6 +130,7 @@ def wait_for_mouseup():
     for event in pygame.event.get():
       if event.type == pygame.MOUSEBUTTONUP:
         return
+    time.sleep(0.2)
 
 def zoombox(screen, click, surface, crop, surface_x0):
   """Help function created during refactoring. Draws the actual zoombox"""
@@ -131,7 +158,7 @@ def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
     zoombox(screen, click, surface_b, crop_b, surface_x0)
 
 def draw(screen, image_number, surface_a, surface_b, epsilon):
-  """Draw the page images and labels on screen for a given page pair."""
+  """Draw the page images on screen."""
   w = pygame.display.Info().current_w
   clearscreen(screen)
   render_text(screen, str(image_number), "upperleft")
@@ -148,16 +175,13 @@ def get_bibliography(barcode):
       bib = urllib.urlopen(url).read()
     except IOError:
       return "Error looking up barcode: %s" % barcode.split("_")[0]
-    print bib
-    for line in bib.split("\n"):
-      if line[0:2] == "%T":
-        return line[3:].strip()
+    return bib
   return "Unknown Barcode: %s" % barcode.split("_")[0]
 
 def main(barcode):
   """Monitor the scanning for images and display them."""
   pygame.init()
-  image_number = 1
+  global image_number
   playground = "/var/tmp/playground/%s" % barcode
   beep = pygame.mixer.Sound('beep.wav')
   h = pygame.display.Info().current_h
@@ -167,30 +191,41 @@ def main(barcode):
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   clearscreen(screen)
-  render_text(screen, get_bibliography(barcode), "center")
+  render_text(screen, get_bibliography(barcode), "upperleft")
+  render_text(screen, ("\n\n\n\n\n\n\n\n\n\n"
+                       "MOUSE       = zoom\n"
+                       "SPACE       = pause\n"
+                       "LEFT ARROW  = back\n"
+                       "RIGHT ARROW = forward\n"
+                       "PAGE UP     = back 10\n"
+                       "PAGE BACK   = forward 10\n"), "upperleft")
   pygame.display.update()
+  time.sleep(5.0)  
   while True:
-    time.sleep(0.2)
-    click, newscreen = handle_user_input()
+    click, newscreen = handle_user_input(playground)
     if newscreen:
       screen = newscreen
     if click:
-      image_number -= 2   # Helps redraw on mousedown
       draw(screen, image_number, surface_a, surface_b, epsilon)
       zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b)
       pygame.display.update()
       wait_for_mouseup()
+      draw(screen, image_number, surface_a, surface_b, epsilon)
+      pygame.display.update()
     filename_a = '%s/%06d.pnm' % (playground, image_number)
     filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
     try:
       surface_a, surface_b, crop_a, crop_b = process_images(h, filename_a,
                                                             filename_b)
     except pygame.error:
+      time.sleep(0.2)
       continue
     draw(screen, image_number, surface_a, surface_b, epsilon)
     pygame.display.update()
     beep.play()
-    image_number += 2
+    if not paused:
+      image_number += 2
+    time.sleep(0.2)
 
 if __name__ == "__main__":
   main(sys.argv[1])
