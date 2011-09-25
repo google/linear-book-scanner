@@ -38,7 +38,7 @@ def clearscreen(screen):
   screen.blit(background, (0,0))
 
 def render_text(screen, msg, position):
-  """Write messages to screen, such as the image number"""
+  """Write messages to screen, such as the image number."""
   pos = [0, 0]
   font = pygame.font.SysFont('Courier', 28, bold=True)
   for line in msg.split("\n"):
@@ -52,34 +52,37 @@ def render_text(screen, msg, position):
     screen.blit(text, pos)
     pos[1] += 30
 
-def process_images(h, filename_a, filename_b):
-  """Crop out the saddle, and reverse one of the sensors.
-  Returns both screen size and full size images."""
+def process_image(h, filename, left):
+  """Returns both screen size and full size images."""
   kSaddleHeight = 3600
-  kSensorOffsetA = 700
-  kSensorOffsetB = 300
-  image_a = pygame.image.load(filename_a)
-  image_b = pygame.image.load(filename_b)
-  crop_a = pygame.Surface((image_a.get_width(), kSaddleHeight))
-  crop_b = pygame.Surface((image_b.get_width(), kSaddleHeight))
-  crop_a.blit(image_a, (0, 0), (0,
-                                kSensorOffsetA,
-                                crop_a.get_width(),
-                                crop_a.get_height()))
-  crop_b.blit(image_b, (0, 0), (0,
-                                kSensorOffsetB,
-                                crop_b.get_width(),
-                                crop_b.get_height()))
-  crop_a = pygame.transform.flip(crop_a, True, False)
-  w_prime = image_a.get_width() * h / kSaddleHeight
-  surface_a = pygame.transform.smoothscale(crop_a, (w_prime, h))
-  surface_b = pygame.transform.smoothscale(crop_b, (w_prime, h))
-  return surface_a, surface_b, crop_a, crop_b
+  if left:
+    sensor_offset = 700
+  else:
+    sensor_offset = 300
+  image = pygame.image.load(filename)
+  crop = pygame.Surface((image.get_width(), kSaddleHeight))
+  crop.blit(image, (0, 0), (0,
+                            sensor_offset,
+                            crop.get_width(),
+                            crop.get_height()))
+  if left:
+    crop = pygame.transform.flip(crop, True, False)
+  w = image.get_width() * h / kSaddleHeight
+  surface = pygame.transform.smoothscale(crop, (w, h))
+  return surface, crop  
+
+def clip_image_number(playground):
+  global image_number
+  if image_number < 1:
+    image_number = 1
+  while image_number > 1:
+    filename = '%s/%06d.pnm' % (playground, image_number)
+    if os.path.exists(filename):
+      break
+    image_number -= 2
 
 def handle_user_input(playground):
-  """ F11 drops us out of full screen mode.
-      ESC or Q quits the program
-      Mouseclick creats a zoombox while mouse is down"""
+  """ You get the idea."""
   global paused
   global image_number
   pos = None
@@ -100,29 +103,24 @@ def handle_user_input(playground):
         w = pygame.display.Info().current_w
         window = pygame.display.set_mode((w, h))
         screen = pygame.display.get_surface()
+        return pos, screen
       elif event.key == pygame.K_SPACE:
-        paused = not paused
+        if paused:
+          paused = False
+          image_number += 2
+        else:
+          paused = True
+        return pos, screen
       elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
-        paused = True
         image_number -= 2
       elif event.key == pygame.K_PAGEUP:
-        paused = True
         image_number -= 10
       elif event.key == pygame.K_RIGHT or event.key == pygame.K_DOWN:
-        paused = True
         image_number += 2
       elif event.key == pygame.K_PAGEDOWN:
-        paused = True
         image_number += 10
-  if image_number < 1:
-    image_number = 1
-  while image_number > 1:
-    filename = '%s/%06d.pnm' % (playground, image_number)
-    if os.path.exists(filename):
-      break
-    image_number -= 2
-        
-
+      paused = True
+      clip_image_number(playground)
   return pos, screen
 
 def wait_for_mouseup():
@@ -182,6 +180,7 @@ def main(barcode):
   """Monitor the scanning for images and display them."""
   pygame.init()
   global image_number
+  last_drawn_image_number = 0
   playground = "/var/tmp/playground/%s" % barcode
   beep = pygame.mixer.Sound('beep.wav')
   h = pygame.display.Info().current_h
@@ -195,12 +194,11 @@ def main(barcode):
   render_text(screen, ("\n\n\n\n\n\n\n\n\n\n"
                        "MOUSE       = zoom\n"
                        "SPACE       = pause\n"
-                       "LEFT ARROW  = back\n"
-                       "RIGHT ARROW = forward\n"
-                       "PAGE UP     = back 10\n"
-                       "PAGE BACK   = forward 10\n"), "upperleft")
+                       "ARROWS      = navigation\n"
+                       "PgUp/PgDn   = navigation!\n"
+                       ), "upperleft")
   pygame.display.update()
-  time.sleep(5.0)  
+  time.sleep(2.0)  
   while True:
     click, newscreen = handle_user_input(playground)
     if newscreen:
@@ -212,20 +210,24 @@ def main(barcode):
       wait_for_mouseup()
       draw(screen, image_number, surface_a, surface_b, epsilon)
       pygame.display.update()
-    filename_a = '%s/%06d.pnm' % (playground, image_number)
-    filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
-    try:
-      surface_a, surface_b, crop_a, crop_b = process_images(h, filename_a,
-                                                            filename_b)
-    except pygame.error:
-      time.sleep(0.2)
-      continue
-    draw(screen, image_number, surface_a, surface_b, epsilon)
-    pygame.display.update()
-    beep.play()
+    if last_drawn_image_number != image_number:
+      filename_a = '%s/%06d.pnm' % (playground, image_number)
+      filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
+      try:
+        surface_a, crop_a = process_image(h, filename_a, True)
+        surface_b, crop_b = process_image(h, filename_b, False)
+      except pygame.error:
+        time.sleep(0.2)
+        continue
+      draw(screen, image_number, surface_a, surface_b, epsilon)
+      if paused:
+        render_text(screen, "paused", "upperright")        
+      pygame.display.update()
+      beep.play()
+      last_drawn_image_number = image_number
     if not paused:
       image_number += 2
-    time.sleep(0.2)
+    time.sleep(0.1)
 
 if __name__ == "__main__":
   main(sys.argv[1])
