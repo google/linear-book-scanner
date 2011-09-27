@@ -223,10 +223,10 @@ def main(barcode):
       if paused:
         render_text(screen, "paused", "upperright")        
       pygame.display.update()
-      beep.play()
       last_drawn_image_number = image_number
     if not paused:
       image_number += 2
+      beep.play()
     time.sleep(0.1)
 
 if __name__ == "__main__":
