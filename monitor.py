@@ -141,17 +141,14 @@ def wait_for_mouseup():
 def set_book_dimensions(click, epsilon, crop, surface):
   global book_dimensions
   if book_dimensions == None:
-    w = pygame.display.Info().current_w
-    if click[0] < w // 2:
-      surface_x0 = w // 2 - epsilon - surface.get_width()
-      x = ((surface.get_width() - click[0] + surface_x0) 
-           * crop.get_width() // surface.get_width())
+    w2 = pygame.display.Info().current_w // 2
+    if click[0] < w2:
+      x = w2 - click[0] - epsilon
     else:
-      surface_x0 = w // 2 + epsilon
-      x = ((click[0] - surface_x0) 
-           * crop.get_width() // surface.get_width())
-    y = ((surface.get_height() - click[1]) 
-         * crop.get_height() // surface.get_height())
+      x = click[0] - w2 - epsilon 
+    y = surface.get_height() - click[1]
+    x = x * crop.get_width() // surface.get_width()
+    y = y * crop.get_height() // surface.get_height()
     book_dimensions = (x, y)
   else:
     book_dimensions = None
@@ -169,12 +166,12 @@ def zoombox(screen, click, surface, crop, surface_x0):
 
 def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
-  w = pygame.display.Info().current_w
-  if click[0] < w // 2:
-    surface_x0 = w // 2 - epsilon - surface_a.get_width()
+  w2 = pygame.display.Info().current_w // 2
+  if click[0] < w2:
+    surface_x0 = w2 - epsilon - surface_a.get_width()
     zoombox(screen, click, surface_a, crop_a, surface_x0)
   else:
-    surface_x0 = w // 2 + epsilon
+    surface_x0 = w2 + epsilon
     zoombox(screen, click, surface_b, crop_b, surface_x0)
 
 def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
@@ -212,6 +209,7 @@ def splashscreen(screen, barcode):
                        "L MOUSE     = zoom\n"
                        "R MOUSE     = crop\n"
                        "SPACE       = pause\n"
+                       "F11         = fullscreen\n"
                        "ARROWS      = navigation\n"
                        "PgUp/PgDn   = navigation!\n"
                        ), "upperleft")
@@ -236,6 +234,8 @@ def main(barcode):
     leftclick, rightclick, newscreen = handle_user_input(playground)
     if newscreen:
       screen = newscreen
+      draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+      pygame.display.update()
     if leftclick:
       draw(screen, image_number, surface_a, surface_b, epsilon, paused)
       zoom(screen, leftclick, epsilon, surface_a, surface_b, crop_a, crop_b)
@@ -246,6 +246,8 @@ def main(barcode):
     if rightclick:
       set_book_dimensions(rightclick, epsilon, crop_a, surface_a)
       try:
+        filename_a = '%s/%06d.pnm' % (playground, last_drawn_image_number)
+        filename_b = '%s/%06d.pnm' % (playground, last_drawn_image_number + 1)
         surface_a, crop_a = process_image(h, filename_a, True)
         surface_b, crop_b = process_image(h, filename_b, False)
       except:
