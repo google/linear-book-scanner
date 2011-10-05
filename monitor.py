@@ -26,6 +26,7 @@ import urllib2
 paused = False
 image_number = 1         # Scanimage starts counting at 1
 book_dimensions = None   # Pixels
+fullscreen = True
 
 def blue():
   """Original scansation blue, handed down from antiquity"""
@@ -90,6 +91,7 @@ def handle_user_input(playground):
   """ You get the idea."""
   global paused
   global image_number
+  global fullscreen
   leftclick = None
   rightclick = None
   screen = None
@@ -109,7 +111,11 @@ def handle_user_input(playground):
       elif event.key == pygame.K_F11:
         h = pygame.display.Info().current_h
         w = pygame.display.Info().current_w
-        window = pygame.display.set_mode((w, h))
+        if fullscreen:
+          window = pygame.display.set_mode((w, h))
+        else:
+          window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
+        fullscreen = not fullscreen
         screen = pygame.display.get_surface()
         return leftclick, rightclick, screen
       elif event.key == pygame.K_SPACE:
