@@ -1,7 +1,9 @@
 #!/bin/bash
 
+. serial.sh
+
 function send {
-  echo -ne "$*\r" > /dev/cu.usbserial-FTC8534M
+  echo -ne "$*\r" > $SERIAL_DEVICE
 }
 
 send A=1000000
