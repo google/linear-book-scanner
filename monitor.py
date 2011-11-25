@@ -23,10 +23,10 @@ import os.path
 import subprocess
 import urllib2
 
-paused = False
+paused = False           # For image inspection
 image_number = 1         # Scanimage starts counting at 1
 book_dimensions = None   # Pixels
-fullscreen = True
+fullscreen = True        # Easier to debug in a window
 
 def blue():
   """Original scansation blue, handed down from antiquity"""
@@ -68,7 +68,7 @@ def process_image(h, filename, is_left):
     crop = pygame.Surface((image.get_width(), kSaddleHeight))
   crop.blit(image, (0, 0), 
             (0,
-             sensor_offset + kSaddleHeight - crop.get_height(), 
+             sensor_offset, 
              crop.get_width(),
              crop.get_height()))
   if is_left:
@@ -78,6 +78,7 @@ def process_image(h, filename, is_left):
   return surface, crop  
 
 def clip_image_number(playground):
+  """ Only show images that exist."""
   global image_number
   if image_number < 1:
     image_number = 1
@@ -145,6 +146,7 @@ def wait_for_mouseup():
     time.sleep(0.2)
 
 def set_book_dimensions(click, epsilon, crop, surface):
+  """ User has clicked on bottom corner of page."""
   global book_dimensions
   if book_dimensions == None:
     w2 = pygame.display.Info().current_w // 2
@@ -152,7 +154,7 @@ def set_book_dimensions(click, epsilon, crop, surface):
       x = w2 - click[0] - epsilon
     else:
       x = click[0] - w2 - epsilon 
-    y = surface.get_height() - click[1]
+    y = click[1]
     x = x * crop.get_width() // surface.get_width()
     y = y * crop.get_height() // surface.get_height()
     book_dimensions = (x, y)
@@ -183,6 +185,7 @@ def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
 def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
   """Draw the page images on screen."""
   w = pygame.display.Info().current_w
+  h = pygame.display.Info().current_h
   clearscreen(screen)
   render_text(screen, str(image_number), "upperleft")
   render_text(screen, str(image_number + 1), "upperright")
@@ -190,7 +193,7 @@ def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
   screen.blit(surface_b, (w // 2 + epsilon, 0))
   if paused:
     render_text(screen, "paused", "upperright")        
-
+    pygame.draw.line(screen, (255, 0, 0), (0, 0), (w, h))
 
 def get_bibliography(barcode):
   """Hit up Google Books for bibliographic data. Thanks, Leonid."""
