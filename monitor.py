@@ -22,6 +22,7 @@ import sys
 import os.path
 import subprocess
 import urllib2
+import BaseHTTPServer
 
 paused = False           # For image inspection
 image_number = 1         # Scanimage starts counting at 1
@@ -89,7 +90,7 @@ def clip_image_number(playground):
     image_number -= 2
 
 def handle_user_input(playground):
-  """ You get the idea."""
+  """ Handle keypresses directly, return mouseclicks to caller."""
   global paused
   global image_number
   global fullscreen
@@ -145,21 +146,35 @@ def wait_for_mouseup():
         return
     time.sleep(0.2)
 
-def set_book_dimensions(click, epsilon, crop, surface):
+def get_book_dimensions(playground):
+  """ User saved book dimensions in some earlier run."""
+  global book_dimensions
+  try:
+    data = open(os.path.join(playground, "book_dimensions")).read()
+    book_dimensions = [int(x) for x in data.split(",")]
+  except IOError:
+    pass
+
+def set_book_dimensions(click, epsilon, crop, surface, playground):
   """ User has clicked on bottom corner of page."""
   global book_dimensions
+  filename = os.path.join(playground, "book_dimensions")
   if book_dimensions == None:
     w2 = pygame.display.Info().current_w // 2
     if click[0] < w2:
       x = w2 - click[0] - epsilon
     else:
       x = click[0] - w2 - epsilon 
-    y = click[1]
     x = x * crop.get_width() // surface.get_width()
-    y = y * crop.get_height() // surface.get_height()
+    y = click[1] * crop.get_height() // surface.get_height()
     book_dimensions = (x, y)
+    f = open(filename, "wb")
+    f.write("%s,%s\n" % book_dimensions)
+    f.close()
   else:
     book_dimensions = None
+    os.unlink(filename)
+  
 
 def zoombox(screen, click, surface, crop, surface_x0):
   """Helper function created during refactoring. Draws the actual zoombox"""
@@ -202,8 +217,14 @@ def get_bibliography(barcode):
            "?vid=isbn%s&output=enw&source=cheese" % barcode[0:13])
     try:
       bib = urllib2.urlopen(url, None, 2).read()
-    except IOError:
-      return "Error looking up barcode: %s" % barcode.split("_")[0]
+    except urllib2.URLError, e:
+      if hasattr(e, 'reason'):
+        excuse =  e.reason
+      elif hasattr(e, 'code'):
+        excuse = "HTTP return code %d\n" % e.code
+        excuse += BaseHTTPServer.BaseHTTPRequestHandler.responses[e.code][0]
+      return "Error looking up barcode: %s\n\n%s" % (barcode.split("_")[0],
+                                                     excuse)
     return bib
   return "Unknown Barcode: %s" % barcode.split("_")[0]
 
@@ -231,6 +252,7 @@ def main(barcode):
   global image_number
   last_drawn_image_number = 0
   playground = "/var/tmp/playground/%s" % barcode
+  get_book_dimensions(playground)
   beep = pygame.mixer.Sound('beep.wav')
   h = pygame.display.Info().current_h
   w = pygame.display.Info().current_w
@@ -253,7 +275,7 @@ def main(barcode):
       draw(screen, image_number, surface_a, surface_b, epsilon, paused)
       pygame.display.update()
     if rightclick:
-      set_book_dimensions(rightclick, epsilon, crop_a, surface_a)
+      set_book_dimensions(rightclick, epsilon, crop_a, surface_a, playground)
       try:
         filename_a = '%s/%06d.pnm' % (playground, last_drawn_image_number)
         filename_b = '%s/%06d.pnm' % (playground, last_drawn_image_number + 1)
