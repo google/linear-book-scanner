@@ -101,12 +101,12 @@ def handle_user_input(playground):
   screen = None
   for event in pygame.event.get():
     if event.type == pygame.MOUSEBUTTONDOWN:
-      if event.button == 1:
-        leftclick = event.pos
       if event.button == 3:
+        rightclick = event.pos
+      if event.button == 1:
         down = event.pos
         up = wait_for_mouseup()
-        rightclick = (down, up)
+        leftclick = (down, up)
     elif event.type == pygame.QUIT:
       pygame.quit()
       sys.exit()
@@ -258,8 +258,8 @@ def splashscreen(screen, barcode):
   clearscreen(screen)
   render_text(screen, get_bibliography(barcode), "upperleft")
   render_text(screen, ("\n\n\n\n\n\n\n\n\n\n"
-                       "L MOUSE     = zoom\n"
-                       "R MOUSE     = crop\n"
+                       "R MOUSE     = zoom\n"
+                       "L MOUSE     = crop\n"
                        "SPACE       = pause\n"
                        "F11         = fullscreen\n"
                        "ARROWS      = navigation\n"
@@ -289,15 +289,15 @@ def main(barcode):
       screen = newscreen
       draw(screen, image_number, surface_a, surface_b, epsilon, paused)
       pygame.display.update()
-    if leftclick:
+    if rightclick:
       draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-      zoom(screen, leftclick, epsilon, surface_a, surface_b, crop_a, crop_b)
+      zoom(screen, rightclick, epsilon, surface_a, surface_b, crop_a, crop_b)
       pygame.display.update()
       wait_for_mouseup()
       draw(screen, image_number, surface_a, surface_b, epsilon, paused)
       pygame.display.update()
-    if rightclick:
-      set_book_dimensions(rightclick, epsilon, crop_a, surface_a, playground)
+    if leftclick:
+      set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
       try:
         filename_a = '%s/%06d.pnm' % (playground, last_drawn_image_number)
         filename_b = '%s/%06d.pnm' % (playground, last_drawn_image_number + 1)
