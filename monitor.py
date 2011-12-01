@@ -26,7 +26,7 @@ import BaseHTTPServer
 
 paused = False           # For image inspection
 image_number = 1         # Scanimage starts counting at 1
-book_dimensions = None   # Pixels
+book_dimensions = None   # (top, bottom, side) in pixels
 fullscreen = True        # Easier to debug in a window
 
 def blue():
@@ -57,19 +57,21 @@ def render_text(screen, msg, position):
 
 def process_image(h, filename, is_left):
   """Returns both screen size and full size images."""
-  kSaddleHeight = 3600
+  kSaddleHeight = 3600   # scan pixels
   if is_left:
     sensor_offset = 600
   else:
     sensor_offset = 150
   image = pygame.image.load(filename)
   if book_dimensions:
-    crop = pygame.Surface(book_dimensions)
+    (top, bottom, side) = book_dimensions
+    crop = pygame.Surface((side, top - bottom))
   else:
+    bottom = 0
     crop = pygame.Surface((image.get_width(), kSaddleHeight))
   crop.blit(image, (0, 0), 
             (0,
-             sensor_offset, 
+             sensor_offset + bottom, 
              crop.get_width(),
              crop.get_height()))
   if is_left:
@@ -102,7 +104,9 @@ def handle_user_input(playground):
       if event.button == 1:
         leftclick = event.pos
       if event.button == 3:
-        rightclick = event.pos
+        down = event.pos
+        up = wait_for_mouseup()
+        rightclick = (down, up)
     elif event.type == pygame.QUIT:
       pygame.quit()
       sys.exit()
@@ -143,7 +147,7 @@ def wait_for_mouseup():
   while True:
     for event in pygame.event.get():
       if event.type == pygame.MOUSEBUTTONUP:
-        return
+        return event.pos
     time.sleep(0.2)
 
 def get_book_dimensions(playground):
@@ -156,20 +160,27 @@ def get_book_dimensions(playground):
     pass
 
 def set_book_dimensions(click, epsilon, crop, surface, playground):
-  """ User has clicked on bottom corner of page."""
+  """ User has clicked to specify book position in image."""
   global book_dimensions
+  down = list(click[0])
+  up = list(click[1])
   filename = os.path.join(playground, "book_dimensions")
+  min_book_height = 30  # screen pixels
   if book_dimensions == None:
     w2 = pygame.display.Info().current_w // 2
-    if click[0] < w2:
-      x = w2 - click[0] - epsilon
-    else:
-      x = click[0] - w2 - epsilon 
-    x = x * crop.get_width() // surface.get_width()
-    y = click[1] * crop.get_height() // surface.get_height()
-    book_dimensions = (x, y)
+    down[0] = abs(w2 - down[0]) + w2
+    up[0] =  abs(w2 - up[0]) + w2
+    if abs(down[1] - up[1]) < min_book_height:
+      return
+    side = max(down[0], up[0]) - w2 - epsilon 
+    top = max(down[1], up[1])
+    bottom = min(down[1], up[1])
+    side = side * crop.get_width() // surface.get_width()
+    top = top * crop.get_height() // surface.get_height()
+    bottom = bottom * crop.get_height() // surface.get_height()
+    book_dimensions = (top, bottom, side)
     f = open(filename, "wb")
-    f.write("%s,%s\n" % book_dimensions)
+    f.write("%s,%s,%s\n" % book_dimensions)
     f.close()
   else:
     book_dimensions = None
@@ -209,6 +220,13 @@ def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
   if paused:
     render_text(screen, "paused", "upperright")        
     pygame.draw.line(screen, (255, 0, 0), (0, 0), (w, h))
+
+def save(crop_a, crop_b, playground, image_number):
+  """Save in something closer to reading order."""
+  filename_a = '%s/%06d.jpg' % (playground, image_number)
+  filename_b = '%s/%06d.jpg' % (playground, image_number + 1)
+  pygame.image.save(crop_b, filename_a)
+  pygame.image.save(crop_a, filename_b)
 
 def get_bibliography(barcode):
   """Hit up Google Books for bibliographic data. Thanks, Leonid."""
@@ -285,6 +303,7 @@ def main(barcode):
         pass
       draw(screen, image_number, surface_a, surface_b, epsilon, paused)
       pygame.display.update()
+      save(crop_a, crop_b, playground, image_number)
     if last_drawn_image_number != image_number:
       filename_a = '%s/%06d.pnm' % (playground, image_number)
       filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
@@ -296,6 +315,7 @@ def main(barcode):
         continue
       draw(screen, image_number, surface_a, surface_b, epsilon, paused)
       pygame.display.update()
+      save(crop_a, crop_b, playground, image_number)
       last_drawn_image_number = image_number
     if not paused:
       image_number += 2
