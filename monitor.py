@@ -16,11 +16,9 @@
 
 import os
 import glob
-import time
 import pygame
 import sys
 import os.path
-import subprocess
 import urllib2
 import BaseHTTPServer
 
@@ -209,8 +207,7 @@ def splashscreen(screen, barcode):
                        "PgUp/PgDn   = navigation!\n"
                        ), "upperleft")
   pygame.display.update()
-  time.sleep(2.0)  
-
+  pygame.time.wait(2000)
 
 def handle_key_event(screen, event, playground):
   global image_number
@@ -244,7 +241,17 @@ def handle_key_event(screen, event, playground):
   clip_image_number(playground)
   return newscreen
 
-def render:
+def render(playground, h, screen, epsilon):
+  global paused
+  global image_number
+  filename_a = '%s/%06d.pnm' % (playground, image_number)
+  filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
+  surface_a, crop_a = process_image(h, filename_a, True)
+  surface_b, crop_b = process_image(h, filename_b, False)
+  draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+  pygame.display.update()
+  save(crop_a, crop_b, playground, image_number)
+  return crop_a, crop_b, surface_a, surface_b
 
 def main(barcode):
   """Display scanned images as they are created."""
@@ -309,13 +316,8 @@ def main(barcode):
         oldscreen = None
         leftclick = (leftdownclick, event.pos)
         set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
-        filename_a = '%s/%06d.pnm' % (playground, last_drawn_image_number)
-        filename_b = '%s/%06d.pnm' % (playground, last_drawn_image_number + 1)
-        surface_a, crop_a = process_image(h, filename_a, True)
-        surface_b, crop_b = process_image(h, filename_b, False)
-        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-        pygame.display.update()
-        save(crop_a, crop_b, playground, image_number)
+        crop_a, crop_b, surface_a, surface_b = render(playground,
+                                                      h, screen, epsilon)
       elif event.type == pygame.USEREVENT:
         if busy:
           continue
@@ -323,16 +325,11 @@ def main(barcode):
           image_number += 2
           clip_image_number(playground)
         if image_number != last_drawn_image_number:
-          filename_a = '%s/%06d.pnm' % (playground, image_number)
-          filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
-          surface_a, crop_a = process_image(h, filename_a, True)
-          surface_b, crop_b = process_image(h, filename_b, False)
-          draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-          pygame.display.update()
+          crop_a, crop_b, surface_a, surface_b = render(playground, 
+                                                        h, screen, epsilon)
           last_drawn_image_number = image_number
           if not paused:
             beep.play()
-          save(crop_a, crop_b, playground, image_number)
           pygame.event.clear(pygame.USEREVENT)
 
 if __name__ == "__main__":
