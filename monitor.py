@@ -227,8 +227,8 @@ def save(crop_a, crop_b, playground, image_number):
     os.mkdir(os.path.join(playground, 'export'))
   except OSError:
     pass
-  filename_a = '%s/export/%06d.jpg' % (playground, 1000 - image_number)
-  filename_b = '%s/export/%06d.jpg' % (playground, 1000 - image_number + 1)
+  filename_a = '%s/export/%06d.jpg' % (playground, 999999 - image_number + 1)
+  filename_b = '%s/export/%06d.jpg' % (playground, 999999 - image_number)
   pygame.image.save(crop_b, filename_a)
   pygame.image.save(crop_a, filename_b)
 
