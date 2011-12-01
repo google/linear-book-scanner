@@ -65,13 +65,13 @@ def process_image(h, filename, is_left):
   image = pygame.image.load(filename)
   if book_dimensions:
     (top, bottom, side) = book_dimensions
-    crop = pygame.Surface((side, top - bottom))
+    crop = pygame.Surface((side, bottom - top))
   else:
-    bottom = 0
+    top = 0
     crop = pygame.Surface((image.get_width(), kSaddleHeight))
   crop.blit(image, (0, 0), 
             (0,
-             sensor_offset + bottom, 
+             sensor_offset + top, 
              crop.get_width(),
              crop.get_height()))
   if is_left:
@@ -154,8 +154,9 @@ def get_book_dimensions(playground):
   """ User saved book dimensions in some earlier run."""
   global book_dimensions
   try:
-    data = open(os.path.join(playground, "book_dimensions")).read()
-    book_dimensions = [int(x) for x in data.split(",")]
+    for line in open(os.path.join(playground, "book_dimensions")).readlines():
+      if line[0] != "#":
+        book_dimensions = [int(x) for x in line.split(",")]
   except IOError:
     pass
 
@@ -173,14 +174,14 @@ def set_book_dimensions(click, epsilon, crop, surface, playground):
     if abs(down[1] - up[1]) < min_book_height:
       return
     side = max(down[0], up[0]) - w2 - epsilon 
-    top = max(down[1], up[1])
-    bottom = min(down[1], up[1])
+    top = min(down[1], up[1])
+    bottom = max(down[1], up[1])
     side = side * crop.get_width() // surface.get_width()
     top = top * crop.get_height() // surface.get_height()
     bottom = bottom * crop.get_height() // surface.get_height()
     book_dimensions = (top, bottom, side)
     f = open(filename, "wb")
-    f.write("%s,%s,%s\n" % book_dimensions)
+    f.write("#top,bottom,side\n%s,%s,%s\n" % book_dimensions)
     f.close()
   else:
     book_dimensions = None
