@@ -142,8 +142,7 @@ def handle_user_input(screen, playground):
         pygame.quit()
         sys.exit()
       elif event.key == pygame.K_F11:
-        h = pygame.display.Info().current_h
-        w = pygame.display.Info().current_w
+        (w, h) = screen.get_size()
         if fullscreen:
           window = pygame.display.set_mode((w, h))
         else:
@@ -236,8 +235,7 @@ def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
 
 def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
   """Draw the page images on screen."""
-  w = pygame.display.Info().current_w
-  h = pygame.display.Info().current_h
+  (w, h) = screen.get_size()
   clearscreen(screen)
   render_text(screen, str(image_number), "upperleft")
   render_text(screen, str(image_number + 1), "upperright")
