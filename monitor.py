@@ -160,7 +160,7 @@ def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
   screen.blit(surface_a, (w // 2 - surface_a.get_width() - epsilon, 0))
   screen.blit(surface_b, (w // 2 + epsilon, 0))
   if paused:
-    render_text(screen, "**  pause  **", "center")
+    render_text(screen, "**  pause  **", "upperleft")
 
 def save(crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
@@ -306,7 +306,7 @@ def main(barcode):
       elif event.type == pygame.MOUSEMOTION:
         if oldscreen and not book_dimensions:
           x = abs(event.pos[0] - w // 2)
-          pos = (event.pos[0], min(leftdownclick[1], event.pos[1]))
+          pos = (w // 2 - x, min(leftdownclick[1], event.pos[1]))
           roi = pygame.Rect(pos, (2 * x, abs(leftdownclick[1] - event.pos[1])))
           screen.blit(oldscreen, (0, 0))
           screen.blit(shadow, (0, 0))
