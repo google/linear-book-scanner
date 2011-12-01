@@ -95,86 +95,6 @@ def clip_image_number(playground):
       break
     image_number -= 2
 
-def cropping_animation(screen, downclick):
-  """User sees what they are doing for crop."""
-  global book_dimensions
-  if book_dimensions:
-    return (0, 0)
-  w2 = pygame.display.Info().current_w / 2
-  old = screen.copy()
-  s = pygame.Surface(screen.get_size())
-  s.set_alpha(128)
-  s.fill((0, 0, 0))
-  while True:
-    for event in pygame.event.get():
-      if event.type == pygame.MOUSEMOTION:
-        x = abs(event.pos[0] - w2)
-        pos = (event.pos[0], min(downclick[1], event.pos[1]))
-        roi = pygame.Rect(pos, (2 * x, abs(downclick[1] - event.pos[1])))
-        screen.blit(old, (0, 0))
-        screen.blit(s, (0, 0))
-        screen.blit(old, pos, area = roi)
-        pygame.display.update()
-      elif event.type == pygame.MOUSEBUTTONUP:
-        return event.pos
-
-def handle_user_input(screen, playground):
-  """Handle keypresses directly, return mouseclicks to caller."""
-  global paused
-  global image_number
-  global fullscreen
-  leftclick = None
-  rightclick = None
-  newscreen = None
-  for event in pygame.event.get():
-    if event.type == pygame.MOUSEBUTTONDOWN:
-      if event.button == 3:
-        rightclick = event.pos
-      if event.button == 1:
-        down = event.pos
-        up = cropping_animation(screen, down)
-        leftclick = (down, up)
-    elif event.type == pygame.QUIT:
-      pygame.quit()
-      sys.exit()
-    elif (event.type == pygame.KEYDOWN):
-      if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
-        pygame.quit()
-        sys.exit()
-      elif event.key == pygame.K_F11:
-        (w, h) = screen.get_size()
-        if fullscreen:
-          window = pygame.display.set_mode((w, h))
-        else:
-          window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
-        fullscreen = not fullscreen
-        newscreen = pygame.display.get_surface()
-        return leftclick, rightclick, newscreen
-      elif event.key == pygame.K_SPACE:
-        if paused:
-          paused = False
-          image_number += 2
-        else:
-          paused = True
-        return leftclick, rightclick, newscreen
-      elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
-        image_number -= 2
-      elif event.key == pygame.K_PAGEUP:
-        image_number -= 10
-      elif event.key == pygame.K_RIGHT or event.key == pygame.K_DOWN:
-        image_number += 2
-      elif event.key == pygame.K_PAGEDOWN:
-        image_number += 10
-      paused = True
-      clip_image_number(playground)
-  return leftclick, rightclick, newscreen
-
-def wait_for_mouseup():
-  while True:
-    for event in pygame.event.get():
-      if event.type == pygame.MOUSEBUTTONUP:
-        return event.pos
-
 def get_book_dimensions(playground):
   """User saved book dimensions in some earlier run."""
   global book_dimensions
@@ -291,10 +211,47 @@ def splashscreen(screen, barcode):
   pygame.display.update()
   time.sleep(2.0)  
 
+
+def handle_key_event(screen, event, playground):
+  global image_number
+  global paused
+  global fullscreen
+  newscreen = None
+  if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
+    pygame.quit()
+    sys.exit()
+  elif event.key == pygame.K_SPACE:
+    if paused:
+      paused = False
+      return newscreen
+  paused = True
+  if event.key == pygame.K_F11:
+    (w, h) = screen.get_size()
+    if fullscreen:
+      window = pygame.display.set_mode((w, h))
+    else:
+      window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
+    fullscreen = not fullscreen
+    newscreen = pygame.display.get_surface()
+  elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
+    image_number -= 2
+  elif event.key == pygame.K_PAGEUP:
+    image_number -= 10
+  elif event.key == pygame.K_RIGHT or event.key == pygame.K_DOWN:
+    image_number += 2
+  elif event.key == pygame.K_PAGEDOWN:
+    image_number += 10
+  clip_image_number(playground)
+  return newscreen
+
 def main(barcode):
   """Display scanned images as they are created."""
   pygame.init()
   global image_number
+  global paused
+  global image_number
+  global fullscreen
+  global book_dimensions
   last_drawn_image_number = 0
   playground = "/var/tmp/playground/%s" % barcode
   get_book_dimensions(playground)
@@ -306,48 +263,75 @@ def main(barcode):
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
+  pygame.time.set_timer(pygame.USEREVENT, 2000)
+  shadow = pygame.Surface(screen.get_size())
+  shadow.set_alpha(128)
+  shadow.fill((0, 0, 0))
+  busy = False
+  old = None
   while True:
-    leftclick, rightclick, newscreen = handle_user_input(screen, playground)
-    if newscreen:
-      screen = newscreen
-      draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-      pygame.display.update()
-    if rightclick:
-      draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-      zoom(screen, rightclick, epsilon, surface_a, surface_b, crop_a, crop_b)
-      pygame.display.update()
-      wait_for_mouseup()
-      draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-      pygame.display.update()
-    if leftclick:
-      set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
-      try:
-        filename_a = '%s/%06d.pnm' % (playground, last_drawn_image_number)
-        filename_b = '%s/%06d.pnm' % (playground, last_drawn_image_number + 1)
-        surface_a, crop_a = process_image(h, filename_a, True)
-        surface_b, crop_b = process_image(h, filename_b, False)
-      except:
-        pass
-      draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-      pygame.display.update()
-      save(crop_a, crop_b, playground, image_number)
-    if last_drawn_image_number != image_number:
-      filename_a = '%s/%06d.pnm' % (playground, image_number)
-      filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
-      try:
-        surface_a, crop_a = process_image(h, filename_a, True)
-        surface_b, crop_b = process_image(h, filename_b, False)
-      except pygame.error:
-        time.sleep(0.2)
-        continue
-      draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-      pygame.display.update()
-      save(crop_a, crop_b, playground, image_number)
-      last_drawn_image_number = image_number
-    if not paused:
-      image_number += 2
-      beep.play()
-    time.sleep(0.1)
+    for event in [ pygame.event.wait() ] + pygame.event.get( ):
+      if event.type == pygame.QUIT:
+        pygame.quit()
+        sys.exit()
+      elif event.type == pygame.KEYDOWN:
+        newscreen = handle_key_event(screen, event, playground)
+        if newscreen:
+          screen = newscreen
+        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+        pygame.display.update()
+      elif event.type == pygame.MOUSEMOTION:
+        if old and not book_dimensions:
+          x = abs(event.pos[0] - w // 2)
+          pos = (event.pos[0], min(downclick[1], event.pos[1]))
+          roi = pygame.Rect(pos, (2 * x, abs(downclick[1] - event.pos[1])))
+          screen.blit(old, (0, 0))
+          screen.blit(shadow, (0, 0))
+          screen.blit(old, pos, area = roi)
+          pygame.display.update()
+      elif event.type == pygame.MOUSEBUTTONUP:
+        busy = False
+        if event.button == 3:
+          draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+          pygame.display.update()
+        elif event.button == 1:
+          old = None
+          leftclick = (downclick, event.pos)
+          set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
+          filename_a = '%s/%06d.pnm' % (playground, last_drawn_image_number)
+          filename_b = '%s/%06d.pnm' % (playground, last_drawn_image_number + 1)
+          surface_a, crop_a = process_image(h, filename_a, True)
+          surface_b, crop_b = process_image(h, filename_b, False)
+          draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+          pygame.display.update()
+          save(crop_a, crop_b, playground, image_number)
+      elif event.type == pygame.MOUSEBUTTONDOWN:
+        busy = True
+        if event.button == 3:
+          rightclick = event.pos
+          draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+          zoom(screen, rightclick, epsilon, surface_a, surface_b, crop_a, crop_b)
+          pygame.display.update()
+        elif event.button == 1:
+          downclick = event.pos
+          old = screen.copy()  
+      elif event.type == pygame.USEREVENT:
+        if busy:
+          continue
+        if not paused:
+          image_number += 2
+          clip_image_number(playground)
+        if image_number != last_drawn_image_number:
+          filename_a = '%s/%06d.pnm' % (playground, image_number)
+          filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
+          surface_a, crop_a = process_image(h, filename_a, True)
+          surface_b, crop_b = process_image(h, filename_b, False)
+          draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+          pygame.display.update()
+          last_drawn_image_number = image_number
+          if not paused:
+            beep.play()
+          save(crop_a, crop_b, playground, image_number)
 
 if __name__ == "__main__":
   main(sys.argv[1])
