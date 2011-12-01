@@ -223,8 +223,12 @@ def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
 
 def save(crop_a, crop_b, playground, image_number):
   """Save in something closer to reading order."""
-  filename_a = '%s/%06d.jpg' % (playground, image_number)
-  filename_b = '%s/%06d.jpg' % (playground, image_number + 1)
+  try:
+    os.mkdir(os.path.join(playground, 'export'))
+  except OSError:
+    pass
+  filename_a = '%s/export/%06d.jpg' % (playground, 1000 - image_number)
+  filename_b = '%s/export/%06d.jpg' % (playground, 1000 - image_number + 1)
   pygame.image.save(crop_b, filename_a)
   pygame.image.save(crop_a, filename_b)
 
