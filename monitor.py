@@ -44,6 +44,8 @@ def render_text(screen, msg, position):
   """Write messages to screen, such as the image number."""
   pos = [0, 0]
   font = pygame.font.SysFont('Courier', 28, bold=True)
+  if position == "center":
+    pos[1] = screen.get_height() / 2
   for line in msg.split("\n"):
     text = font.render(line.strip(), 1, (255, 255, 255))
     background = pygame.Surface(text.get_size())
@@ -51,12 +53,14 @@ def render_text(screen, msg, position):
     background.fill(blue())
     if position == "upperright":
       pos[0] = screen.get_width() - text.get_width()
+    if position == "center":
+      pos[0] = screen.get_width() / 2 - text.get_width() / 2
     screen.blit(background, pos)
     screen.blit(text, pos)
     pos[1] += 30
 
 def process_image(h, filename, is_left):
-  """Returns both screen size and full size images."""
+  """Returns both screen resolutin and scan resolution images."""
   kSaddleHeight = 3600   # scan pixels
   if is_left:
     sensor_offset = 600
@@ -81,7 +85,7 @@ def process_image(h, filename, is_left):
   return surface, crop  
 
 def clip_image_number(playground):
-  """ Only show images that exist."""
+  """Only show images that exist."""
   global image_number
   if image_number < 1:
     image_number = 1
@@ -91,21 +95,44 @@ def clip_image_number(playground):
       break
     image_number -= 2
 
-def handle_user_input(playground):
-  """ Handle keypresses directly, return mouseclicks to caller."""
+def cropping_animation(screen, downclick):
+  """User sees what they are doing for crop."""
+  global book_dimensions
+  if book_dimensions:
+    return (0, 0)
+  w2 = pygame.display.Info().current_w / 2
+  old = screen.copy()
+  s = pygame.Surface(screen.get_size())
+  s.set_alpha(128)
+  s.fill((0, 0, 0))
+  while True:
+    for event in pygame.event.get():
+      if event.type == pygame.MOUSEMOTION:
+        x = abs(event.pos[0] - w2)
+        pos = (event.pos[0], min(downclick[1], event.pos[1]))
+        roi = pygame.Rect(pos, (2 * x, abs(downclick[1] - event.pos[1])))
+        screen.blit(old, (0, 0))
+        screen.blit(s, (0, 0))
+        screen.blit(old, pos, area = roi)
+        pygame.display.update()
+      elif event.type == pygame.MOUSEBUTTONUP:
+        return event.pos
+
+def handle_user_input(screen, playground):
+  """Handle keypresses directly, return mouseclicks to caller."""
   global paused
   global image_number
   global fullscreen
   leftclick = None
   rightclick = None
-  screen = None
+  newscreen = None
   for event in pygame.event.get():
     if event.type == pygame.MOUSEBUTTONDOWN:
       if event.button == 3:
         rightclick = event.pos
       if event.button == 1:
         down = event.pos
-        up = wait_for_mouseup()
+        up = cropping_animation(screen, down)
         leftclick = (down, up)
     elif event.type == pygame.QUIT:
       pygame.quit()
@@ -122,15 +149,15 @@ def handle_user_input(playground):
         else:
           window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
         fullscreen = not fullscreen
-        screen = pygame.display.get_surface()
-        return leftclick, rightclick, screen
+        newscreen = pygame.display.get_surface()
+        return leftclick, rightclick, newscreen
       elif event.key == pygame.K_SPACE:
         if paused:
           paused = False
           image_number += 2
         else:
           paused = True
-        return leftclick, rightclick, screen
+        return leftclick, rightclick, newscreen
       elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
         image_number -= 2
       elif event.key == pygame.K_PAGEUP:
@@ -141,17 +168,16 @@ def handle_user_input(playground):
         image_number += 10
       paused = True
       clip_image_number(playground)
-  return leftclick, rightclick, screen
+  return leftclick, rightclick, newscreen
 
 def wait_for_mouseup():
   while True:
     for event in pygame.event.get():
       if event.type == pygame.MOUSEBUTTONUP:
         return event.pos
-    time.sleep(0.2)
 
 def get_book_dimensions(playground):
-  """ User saved book dimensions in some earlier run."""
+  """User saved book dimensions in some earlier run."""
   global book_dimensions
   try:
     for line in open(os.path.join(playground, "book_dimensions")).readlines():
@@ -161,17 +187,17 @@ def get_book_dimensions(playground):
     pass
 
 def set_book_dimensions(click, epsilon, crop, surface, playground):
-  """ User has clicked to specify book position in image."""
+  """User has dragged mouse to specify book position in image."""
   global book_dimensions
   down = list(click[0])
   up = list(click[1])
   filename = os.path.join(playground, "book_dimensions")
-  min_book_height = 30  # screen pixels
+  min_book_dimension = 30  # screen pixels
   if book_dimensions == None:
     w2 = pygame.display.Info().current_w // 2
     down[0] = abs(w2 - down[0]) + w2
     up[0] =  abs(w2 - up[0]) + w2
-    if abs(down[1] - up[1]) < min_book_height:
+    if min(abs(down[1] - up[1]), abs(up[0] - w2)) < min_book_dimension:
       return
     side = max(down[0], up[0]) - w2 - epsilon 
     top = min(down[1], up[1])
@@ -187,9 +213,8 @@ def set_book_dimensions(click, epsilon, crop, surface, playground):
     book_dimensions = None
     os.unlink(filename)
   
-
 def zoombox(screen, click, surface, crop, surface_x0):
-  """Helper function created during refactoring. Draws the actual zoombox"""
+  """Helper function created during refactoring. Draws zoombox"""
   x = (click[0] - surface_x0) * crop.get_width() // surface.get_width()
   y = click[1] * crop.get_height() // surface.get_height()
   if x < 0 or x >= crop.get_width():
@@ -219,11 +244,10 @@ def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
   screen.blit(surface_a, (w // 2 - surface_a.get_width() - epsilon, 0))
   screen.blit(surface_b, (w // 2 + epsilon, 0))
   if paused:
-    render_text(screen, "paused", "upperright")        
-    pygame.draw.line(screen, (255, 0, 0), (0, 0), (w, h))
+    render_text(screen, "**  pause  **", "center")
 
 def save(crop_a, crop_b, playground, image_number):
-  """Save in something closer to reading order."""
+  """Save cropped images in reading order."""
   try:
     os.mkdir(os.path.join(playground, 'export'))
   except OSError:
@@ -270,7 +294,7 @@ def splashscreen(screen, barcode):
   time.sleep(2.0)  
 
 def main(barcode):
-  """Monitor the scanning for images and display them."""
+  """Display scanned images as they are created."""
   pygame.init()
   global image_number
   last_drawn_image_number = 0
@@ -285,7 +309,7 @@ def main(barcode):
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
   while True:
-    leftclick, rightclick, newscreen = handle_user_input(playground)
+    leftclick, rightclick, newscreen = handle_user_input(screen, playground)
     if newscreen:
       screen = newscreen
       draw(screen, image_number, surface_a, surface_b, epsilon, paused)
