@@ -244,12 +244,13 @@ def handle_key_event(screen, event, playground):
   clip_image_number(playground)
   return newscreen
 
+def render:
+
 def main(barcode):
   """Display scanned images as they are created."""
   pygame.init()
   global image_number
   global paused
-  global image_number
   global fullscreen
   global book_dimensions
   last_drawn_image_number = 0
@@ -263,14 +264,18 @@ def main(barcode):
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
-  pygame.time.set_timer(pygame.USEREVENT, 2000)
+  pygame.time.set_timer(pygame.USEREVENT, 100)
   shadow = pygame.Surface(screen.get_size())
   shadow.set_alpha(128)
   shadow.fill((0, 0, 0))
   busy = False
-  old = None
+  oldscreen = None
   while True:
-    for event in [ pygame.event.wait() ] + pygame.event.get( ):
+    for event in [ pygame.event.wait() ]:
+      if event.type == pygame.MOUSEBUTTONDOWN:
+        busy = True
+      if event.type == pygame.MOUSEBUTTONUP:
+        busy = False
       if event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
@@ -280,41 +285,37 @@ def main(barcode):
           screen = newscreen
         draw(screen, image_number, surface_a, surface_b, epsilon, paused)
         pygame.display.update()
+      elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
+        rightclick = event.pos
+        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+        zoom(screen, rightclick, epsilon, surface_a, surface_b, crop_a, crop_b)
+        pygame.display.update()
+      elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
+        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+        pygame.display.update()
+      elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        leftdownclick = event.pos
+        oldscreen = screen.copy()  
       elif event.type == pygame.MOUSEMOTION:
-        if old and not book_dimensions:
+        if oldscreen and not book_dimensions:
           x = abs(event.pos[0] - w // 2)
-          pos = (event.pos[0], min(downclick[1], event.pos[1]))
-          roi = pygame.Rect(pos, (2 * x, abs(downclick[1] - event.pos[1])))
-          screen.blit(old, (0, 0))
+          pos = (event.pos[0], min(leftdownclick[1], event.pos[1]))
+          roi = pygame.Rect(pos, (2 * x, abs(leftdownclick[1] - event.pos[1])))
+          screen.blit(oldscreen, (0, 0))
           screen.blit(shadow, (0, 0))
-          screen.blit(old, pos, area = roi)
+          screen.blit(oldscreen, pos, area = roi)
           pygame.display.update()
-      elif event.type == pygame.MOUSEBUTTONUP:
-        busy = False
-        if event.button == 3:
-          draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-          pygame.display.update()
-        elif event.button == 1:
-          old = None
-          leftclick = (downclick, event.pos)
-          set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
-          filename_a = '%s/%06d.pnm' % (playground, last_drawn_image_number)
-          filename_b = '%s/%06d.pnm' % (playground, last_drawn_image_number + 1)
-          surface_a, crop_a = process_image(h, filename_a, True)
-          surface_b, crop_b = process_image(h, filename_b, False)
-          draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-          pygame.display.update()
-          save(crop_a, crop_b, playground, image_number)
-      elif event.type == pygame.MOUSEBUTTONDOWN:
-        busy = True
-        if event.button == 3:
-          rightclick = event.pos
-          draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-          zoom(screen, rightclick, epsilon, surface_a, surface_b, crop_a, crop_b)
-          pygame.display.update()
-        elif event.button == 1:
-          downclick = event.pos
-          old = screen.copy()  
+      elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+        oldscreen = None
+        leftclick = (leftdownclick, event.pos)
+        set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
+        filename_a = '%s/%06d.pnm' % (playground, last_drawn_image_number)
+        filename_b = '%s/%06d.pnm' % (playground, last_drawn_image_number + 1)
+        surface_a, crop_a = process_image(h, filename_a, True)
+        surface_b, crop_b = process_image(h, filename_b, False)
+        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+        pygame.display.update()
+        save(crop_a, crop_b, playground, image_number)
       elif event.type == pygame.USEREVENT:
         if busy:
           continue
@@ -332,6 +333,7 @@ def main(barcode):
           if not paused:
             beep.play()
           save(crop_a, crop_b, playground, image_number)
+          pygame.event.clear(pygame.USEREVENT)
 
 if __name__ == "__main__":
   main(sys.argv[1])
