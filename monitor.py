@@ -287,13 +287,18 @@ def main(barcode):
         oldscreen = screen.copy()  
         shadowscreen = screen.copy()
         shadowscreen.blit(shadow, (0, 0))
+        screen.blit(shadowscreen, (0, 0))
+        prevroi = pygame.Rect(event.pos, (0, 0))
+        pygame.display.update()
       elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
         x = abs(event.pos[0] - w // 2)
         pos = (w // 2 - x, min(leftdownclick[1], event.pos[1]))
         roi = pygame.Rect(pos, (2 * x, abs(leftdownclick[1] - event.pos[1])))
-        screen.blit(shadowscreen, (0, 0))
-        screen.blit(oldscreen, pos, area = roi)
-        pygame.display.update()
+        dirty = roi.union(prevroi)
+        prevroi = roi.copy()
+        screen.blit(shadowscreen, dirty.topleft, area = dirty)
+        screen.blit(oldscreen, roi.topleft, area = roi)
+        pygame.display.update(dirty)
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
         oldscreen = None
         leftclick = (leftdownclick, event.pos)
