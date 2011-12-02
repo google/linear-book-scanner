@@ -64,7 +64,7 @@ def process_image(h, filename, is_left):
     sensor_offset = 600
   else:
     sensor_offset = 150
-  image = pygame.image.load(filename)
+  image = pygame.image.load(filename).convert()
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     crop = pygame.Surface((side, bottom - top))
@@ -276,22 +276,30 @@ def main(barcode):
   shadow.set_alpha(128)
   shadow.fill((0, 0, 0))
   busy = False
-  oldscreen = None
   while True:
     for event in [ pygame.event.wait() ]:
       if event.type == pygame.MOUSEBUTTONDOWN:
         busy = True
       if event.type == pygame.MOUSEBUTTONUP:
         busy = False
-      if event.type == pygame.QUIT:
-        pygame.quit()
-        sys.exit()
-      elif event.type == pygame.KEYDOWN:
-        newscreen = handle_key_event(screen, event, playground)
-        if newscreen:
-          screen = newscreen
-        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+      if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        leftdownclick = event.pos
+        oldscreen = screen.copy()  
+        shadowscreen = screen.copy()
+        shadowscreen.blit(shadow, (0, 0))
+      elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
+        x = abs(event.pos[0] - w // 2)
+        pos = (w // 2 - x, min(leftdownclick[1], event.pos[1]))
+        roi = pygame.Rect(pos, (2 * x, abs(leftdownclick[1] - event.pos[1])))
+        screen.blit(shadowscreen, (0, 0))
+        screen.blit(oldscreen, pos, area = roi)
         pygame.display.update()
+      elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+        oldscreen = None
+        leftclick = (leftdownclick, event.pos)
+        set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
+        crop_a, crop_b, surface_a, surface_b = render(playground,
+                                                      h, screen, epsilon)
       elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
         rightclick = event.pos
         draw(screen, image_number, surface_a, surface_b, epsilon, paused)
@@ -300,24 +308,15 @@ def main(barcode):
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
         draw(screen, image_number, surface_a, surface_b, epsilon, paused)
         pygame.display.update()
-      elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        leftdownclick = event.pos
-        oldscreen = screen.copy()  
-      elif event.type == pygame.MOUSEMOTION:
-        if oldscreen and not book_dimensions:
-          x = abs(event.pos[0] - w // 2)
-          pos = (w // 2 - x, min(leftdownclick[1], event.pos[1]))
-          roi = pygame.Rect(pos, (2 * x, abs(leftdownclick[1] - event.pos[1])))
-          screen.blit(oldscreen, (0, 0))
-          screen.blit(shadow, (0, 0))
-          screen.blit(oldscreen, pos, area = roi)
-          pygame.display.update()
-      elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-        oldscreen = None
-        leftclick = (leftdownclick, event.pos)
-        set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
-        crop_a, crop_b, surface_a, surface_b = render(playground,
-                                                      h, screen, epsilon)
+      elif event.type == pygame.QUIT:
+        pygame.quit()
+        sys.exit()
+      elif event.type == pygame.KEYDOWN:
+        newscreen = handle_key_event(screen, event, playground)
+        if newscreen:
+          screen = newscreen
+        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+        pygame.display.update()
       elif event.type == pygame.USEREVENT:
         if busy:
           continue
