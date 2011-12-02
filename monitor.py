@@ -329,12 +329,16 @@ def main(barcode):
           image_number += 2
           clip_image_number(playground)
         if image_number != last_drawn_image_number:
-          crop_a, crop_b, surface_a, surface_b = render(playground, 
+          try:
+            crop_a, crop_b, surface_a, surface_b = render(playground, 
                                                         h, screen, epsilon)
-          last_drawn_image_number = image_number
-          if not paused:
-            beep.play()
+            last_drawn_image_number = image_number
+            if not paused:
+              beep.play()
+          except pygame.error:
+            pass
           pygame.event.clear(pygame.USEREVENT)
+            
 
 if __name__ == "__main__":
   main(sys.argv[1])
