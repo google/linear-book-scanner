@@ -42,8 +42,6 @@ def render_text(screen, msg, position):
   """Write messages to screen, such as the image number."""
   pos = [0, 0]
   font = pygame.font.SysFont('Courier', 28, bold=True)
-  if position == "center":
-    pos[1] = screen.get_height() / 2
   for line in msg.split("\n"):
     text = font.render(line.strip(), 1, (255, 255, 255))
     background = pygame.Surface(text.get_size())
@@ -51,15 +49,13 @@ def render_text(screen, msg, position):
     background.fill(blue())
     if position == "upperright":
       pos[0] = screen.get_width() - text.get_width()
-    if position == "center":
-      pos[0] = screen.get_width() / 2 - text.get_width() / 2
     screen.blit(background, pos)
     screen.blit(text, pos)
     pos[1] += 30
 
 def process_image(h, filename, is_left):
-  """Returns both screen resolutin and scan resolution images."""
-  kSaddleHeight = 3600   # scan pixels
+  """Return both screen resolution and scan resolution images."""
+  kSaddleHeight = 3600  # scan pixels
   if is_left:
     sensor_offset = 600
   else:
@@ -72,13 +68,10 @@ def process_image(h, filename, is_left):
     top = 0
     crop = pygame.Surface((image.get_width(), kSaddleHeight))
   crop.blit(image, (0, 0), 
-            (0,
-             sensor_offset + top, 
-             crop.get_width(),
-             crop.get_height()))
+            (0, sensor_offset + top, crop.get_width(), crop.get_height()))
   if is_left:
     crop = pygame.transform.flip(crop, True, False)
-  w = image.get_width() * h / kSaddleHeight
+  w = image.get_width() * h // kSaddleHeight
   surface = pygame.transform.smoothscale(crop, (w, h))
   return surface, crop  
 
@@ -331,7 +324,7 @@ def main(barcode):
         if image_number != last_drawn_image_number:
           try:
             crop_a, crop_b, surface_a, surface_b = render(playground, 
-                                                        h, screen, epsilon)
+                                                          h, screen, epsilon)
             last_drawn_image_number = image_number
             if not paused:
               beep.play()
