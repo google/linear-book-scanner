@@ -21,7 +21,6 @@ import sys
 import os.path
 import urllib2
 import BaseHTTPServer
-import cProfile
 
 paused = False           # For image inspection
 image_number = 1         # Scanimage starts counting at 1
@@ -43,7 +42,7 @@ def render_text(screen, msg, position):
   pos = [0, 0]
   font = pygame.font.SysFont('Courier', 28, bold=True)
   for line in msg.split("\n"):
-    text = font.render(line.strip(), 1, (255, 255, 255))
+    text = font.render(line, 1, (255, 255, 255))
     background = pygame.Surface(text.get_size())
     background = background.convert()
     background.fill(blue())
@@ -146,9 +145,8 @@ def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
 def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
   """Draw the page images on screen."""
   (w, h) = screen.get_size()
-  clearscreen(screen)
-  render_text(screen, str(image_number), "upperleft")
-  render_text(screen, str(image_number + 1), "upperright")
+  render_text(screen, "%d           " % image_number, "upperleft")
+  render_text(screen, "           %d" % (image_number + 1), "upperright")
   screen.blit(surface_a, (w // 2 - surface_a.get_width() - epsilon, 0))
   screen.blit(surface_b, (w // 2 + epsilon, 0))
   if paused:
@@ -199,6 +197,7 @@ def splashscreen(screen, barcode):
                        "PgUp/PgDn   = navigation!\n"
                        ), "upperleft")
   pygame.display.update()
+  clearscreen(screen)
   pygame.time.wait(2000)
 
 def handle_key_event(screen, event, playground):
