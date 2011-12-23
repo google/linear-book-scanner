@@ -21,6 +21,7 @@ import sys
 import os.path
 import urllib2
 import BaseHTTPServer
+import cProfile
 
 paused = False           # For image inspection
 image_number = 1         # Scanimage starts counting at 1
@@ -60,7 +61,7 @@ def process_image(h, filename, is_left):
     sensor_offset = 600
   else:
     sensor_offset = 150
-  image = pygame.image.load(filename).convert()
+  image = pygame.image.load(filename)
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     crop = pygame.Surface((side, bottom - top))
@@ -243,7 +244,7 @@ def render(playground, h, screen, epsilon):
   surface_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, surface_a, surface_b, epsilon, paused)
   pygame.display.update()
-  save(crop_a, crop_b, playground, image_number)
+#  save(crop_a, crop_b, playground, image_number)
   return crop_a, crop_b, surface_a, surface_b
 
 def main(barcode):
@@ -273,8 +274,7 @@ def main(barcode):
     for event in [ pygame.event.wait() ]:
       if event.type == pygame.MOUSEBUTTONDOWN:
         busy = True
-      if event.type == pygame.MOUSEBUTTONUP:
-        busy = False
+        pygame.event.clear(pygame.USEREVENT)
       if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
         leftdownclick = event.pos
         oldscreen = screen.copy()  
@@ -298,6 +298,7 @@ def main(barcode):
         set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
         crop_a, crop_b, surface_a, surface_b = render(playground,
                                                       h, screen, epsilon)
+        busy = False
       elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
         rightclick = event.pos
         draw(screen, image_number, surface_a, surface_b, epsilon, paused)
@@ -306,6 +307,7 @@ def main(barcode):
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
         draw(screen, image_number, surface_a, surface_b, epsilon, paused)
         pygame.display.update()
+        busy = False
       elif event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
