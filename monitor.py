@@ -35,7 +35,6 @@ def blue():
 def clearscreen(screen):
   """And G-d said, "Let there be blue light!"""
   background = pygame.Surface(screen.get_size())
-  background = background.convert()
   background.fill(blue())
   screen.blit(background, (0,0))
 
@@ -68,10 +67,10 @@ def process_image(h, filename, is_left):
   else:
     rect = pygame.Rect((0, sensor_offset), (image.get_width(), kSaddleHeight))
   crop = image.subsurface(rect)
-  if is_left:
-    crop = pygame.transform.flip(crop, True, False)
   w = image.get_width() * h // kSaddleHeight
   surface = pygame.transform.smoothscale(crop, (w, h))
+  if is_left:
+    surface = pygame.transform.flip(surface, True, False)
   return surface, crop  
 
 def clip_image_number(playground):
@@ -138,7 +137,8 @@ def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
   w2 = pygame.display.Info().current_w // 2
   if click[0] < w2:
     surface_x0 = w2 - epsilon - surface_a.get_width()
-    zoombox(screen, click, surface_a, crop_a, surface_x0)
+    crop = pygame.transform.flip(crop_a, True, False)
+    zoombox(screen, click, surface_a, crop, surface_x0)
   else:
     surface_x0 = w2 + epsilon
     zoombox(screen, click, surface_b, crop_b, surface_x0)
@@ -263,7 +263,7 @@ def main(barcode):
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
-  pygame.time.set_timer(pygame.USEREVENT, 100)
+  pygame.time.set_timer(pygame.USEREVENT, 10)
   shadow = pygame.Surface(screen.get_size())
   shadow.set_alpha(128)
   shadow.fill((0, 0, 0))
