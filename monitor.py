@@ -58,18 +58,16 @@ def process_image(h, filename, is_left):
   """Return both screen resolution and scan resolution images."""
   kSaddleHeight = 3600  # scan pixels
   if is_left:
-    sensor_offset = 600
+    sensor_offset = 593
   else:
     sensor_offset = 150
   image = pygame.image.load(filename)
   if book_dimensions:
     (top, bottom, side) = book_dimensions
-    crop = pygame.Surface((side, bottom - top))
+    rect = pygame.Rect((0, sensor_offset + top), (side, bottom - top))
   else:
-    top = 0
-    crop = pygame.Surface((image.get_width(), kSaddleHeight))
-  crop.blit(image, (0, 0), 
-            (0, sensor_offset + top, crop.get_width(), crop.get_height()))
+    rect = pygame.Rect((0, sensor_offset), (image.get_width(), kSaddleHeight))
+  crop = image.subsurface(rect)
   if is_left:
     crop = pygame.transform.flip(crop, True, False)
   w = image.get_width() * h // kSaddleHeight
