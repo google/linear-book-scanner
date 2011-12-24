@@ -21,6 +21,7 @@ import sys
 import os.path
 import urllib2
 import BaseHTTPServer
+import mmap
 
 paused = False           # For image inspection
 image_number = 1         # Scanimage starts counting at 1
@@ -44,13 +45,34 @@ def render_text(screen, msg, position):
   for line in msg.split("\n"):
     text = font.render(line, 1, (255, 255, 255))
     background = pygame.Surface(text.get_size())
-    background = background.convert()
     background.fill(blue())
     if position == "upperright":
       pos[0] = screen.get_width() - text.get_width()
     screen.blit(background, pos)
     screen.blit(text, pos)
     pos[1] += 30
+
+def read_pnm_header(fp):
+  """Read dimensions and headersize from a PPM file."""
+  headersize = 0
+  magic_number = fp.readline()
+  if magic_number != "P6\n":
+    raise TypeError("Hey! Not a ppm image file.")
+  headersize += len(magic_number)
+  comment = fp.readline()
+  if comment[0] == "#":
+    headersize += len(comment)
+    dimensions = fp.readline()
+  else:
+    dimensions = comment
+  headersize += len(dimensions)
+  max_value = fp.readline()
+  if max_value != "255\n":
+    raise ValueError("I only work with 8 bits per color channel")
+  headersize += len(max_value)
+  linewidth = int(dimensions.split(" ")[0])
+  linecount = int(dimensions.split(" ")[1])
+  return (linewidth, linecount), headersize
 
 def process_image(h, filename, is_left):
   """Return both screen resolution and scan resolution images."""
@@ -59,7 +81,10 @@ def process_image(h, filename, is_left):
     sensor_offset = 593
   else:
     sensor_offset = 150
-  image = pygame.image.load(filename)
+  f = open(filename, "r+b")
+  dimensions, headersize = read_pnm_header(f)
+  map = mmap.mmap(f.fileno(), 0)
+  image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     rect = pygame.Rect((0, sensor_offset + top), (side, bottom - top))
@@ -70,6 +95,8 @@ def process_image(h, filename, is_left):
   surface = pygame.transform.smoothscale(crop, (w, h))
   if is_left:
     surface = pygame.transform.flip(surface, True, False)
+  map.close()
+  f.close()
   return surface, crop  
 
 def clip_image_number(playground):
@@ -302,6 +329,7 @@ def main(barcode):
         zoom(screen, rightclick, epsilon, surface_a, surface_b, crop_a, crop_b)
         pygame.display.update()
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
+        clearscreen(screen)
         draw(screen, image_number, surface_a, surface_b, epsilon, paused)
         pygame.display.update()
         busy = False
@@ -330,7 +358,6 @@ def main(barcode):
           except pygame.error:
             pass
           pygame.event.clear(pygame.USEREVENT)
-            
 
 if __name__ == "__main__":
   main(sys.argv[1])
