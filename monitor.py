@@ -70,9 +70,9 @@ def read_pnm_header(fp):
   if max_value != "255\n":
     raise ValueError("I only work with 8 bits per color channel")
   headersize += len(max_value)
-  linewidth = int(dimensions.split(" ")[0])
-  linecount = int(dimensions.split(" ")[1])
-  return (linewidth, linecount), headersize
+  w = int(dimensions.split(" ")[0])
+  h = int(dimensions.split(" ")[1])
+  return (w, h), headersize
 
 def process_image(h, filename, is_left):
   """Return both screen resolution and scan resolution images."""
@@ -308,6 +308,8 @@ def main(barcode):
         prevroi = pygame.Rect(event.pos, (0, 0))
         pygame.display.update()
       elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
+        if book_dimensions:
+          continue
         x = abs(event.pos[0] - w // 2)
         pos = (w // 2 - x, min(leftdownclick[1], event.pos[1]))
         roi = pygame.Rect(pos, (2 * x, abs(leftdownclick[1] - event.pos[1])))
@@ -320,6 +322,7 @@ def main(barcode):
         oldscreen = None
         leftclick = (leftdownclick, event.pos)
         set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
+        clearscreen(screen)
         crop_a, crop_b, surface_a, surface_b = render(playground,
                                                       h, screen, epsilon)
         busy = False
