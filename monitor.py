@@ -93,13 +93,13 @@ def process_image(h, filename, is_left):
   dimensions, headersize = read_pnm_header(f)
   map = mmap.mmap(f.fileno(), 0)
   image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
-  full_coord = crop_to_full_coord((0, 0), is_left)
+  coord = crop_to_full_coord((0, 0), is_left)
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     wh = (side, bottom - top)
   else:
     wh = (image.get_width(), kSaddleHeight)
-  rect = pygame.Rect(full_coord, wh)
+  rect = pygame.Rect(coord, wh)
   crop = image.subsurface(rect)
   w = image.get_width() * h // kSaddleHeight
   scale = pygame.transform.smoothscale(crop, (w, h))
@@ -288,12 +288,12 @@ def render(playground, h, screen, epsilon):
   return crop_a, crop_b, scale_a, scale_b
 
 def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
-  kSize = screen.get_height() // 10
+  size = screen.get_height() // 10
   crop_coord, is_left = scale_to_crop_coord(click, scale_size, 
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
   for i in range(2, 100000, 2):
-    j = i // 2
+    j = i // 2 - 1
     filename = os.path.join(playground, '%06d.pnm' % i)
     if not os.path.exists(filename):
       break
@@ -301,14 +301,13 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     map = mmap.mmap(f.fileno(), 0)
     dimensions, headersize = read_pnm_header(f)
     image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
-    wh = (kSize, kSize)
-    src = full_coord[0] - kSize, full_coord[1] - kSize
-    rect = pygame.Rect(src, (kSize * 2, kSize * 2))
+    src = full_coord[0] - size, full_coord[1] - size // 2
+    rect = pygame.Rect(src, (size * 2, size))
     crop = image.subsurface(rect)
-    scale = pygame.transform.smoothscale(crop, wh)
-    dst = (kSize * (j // 10), kSize * (j % 10))
-    dirty = pygame.Rect(dst, wh)
-    screen.blit(crop, dst)
+    scale = pygame.transform.smoothscale(crop, (size, size // 2))
+    dst = (size * (j % 10), size // 2 * (j // 10))
+    dirty = pygame.Rect(dst, (size, size // 2))
+    screen.blit(scale, dst)
     map.close()
     f.close()
     pygame.display.update(dirty)
