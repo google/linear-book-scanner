@@ -301,11 +301,14 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     map = mmap.mmap(f.fileno(), 0)
     dimensions, headersize = read_pnm_header(f)
     image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
-    dst = (kSize * (j // 10), kSize * (j % 10))
-    src = full_coord[0] - kSize // 2, full_coord[1] - kSize // 2
     wh = (kSize, kSize)
+    src = full_coord[0] - kSize, full_coord[1] - kSize
+    rect = pygame.Rect(src, (kSize * 2, kSize * 2))
+    crop = image.subsurface(rect)
+    scale = pygame.transform.smoothscale(crop, wh)
+    dst = (kSize * (j // 10), kSize * (j % 10))
     dirty = pygame.Rect(dst, wh)
-    screen.blit(image, dst, (src, wh))
+    screen.blit(crop, dst)
     map.close()
     f.close()
     pygame.display.update(dirty)
