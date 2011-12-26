@@ -183,7 +183,6 @@ def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
   coordinates, is_left = scale_to_crop_coord(click, scale_a.get_size(),
                                 crop_a.get_size(), epsilon)
-  w2 = pygame.display.Info().current_w // 2
   if is_left:
     crop_a = pygame.transform.flip(crop_a, True, False)
     crop = crop_a
