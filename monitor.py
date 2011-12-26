@@ -291,6 +291,8 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   size = screen.get_height() // 10
   crop_coord, is_left = scale_to_crop_coord(click, scale_size, 
                                             crop_size, epsilon)
+  if is_left:
+    return
   full_coord = crop_to_full_coord(crop_coord, is_left)
   for i in range(2, 100000, 2):
     j = i // 2 - 1
