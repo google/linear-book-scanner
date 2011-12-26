@@ -91,8 +91,11 @@ def crop_to_full_coord(crop_coord, is_left):
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     y += top
-    if is_left:
+  if is_left:
+    if book_dimensions:
       x = side - x
+    else:
+      x = 2550 - x   # Violation
   if is_left:
     y += 593
   else:
