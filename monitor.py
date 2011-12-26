@@ -86,8 +86,6 @@ def crop_to_full_coord(crop_coord, is_left):
   return full_coord
 
 def crop_to_full_coord2(crop_coord, is_left):
-  print "crop_coord"
-  print crop_coord
   x, y = crop_coord
   if book_dimensions:
     (top, bottom, side) = book_dimensions
