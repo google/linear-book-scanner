@@ -74,8 +74,7 @@ def read_pnm_header(fp):
   h = int(dimensions.split(" ")[1])
   return (w, h), headersize
 
-def map_crop_to_full(crop_coords, is_left):
-  kSaddleHeight = 3600  # scan pixels
+def map_crop_to_full(crop_coord, is_left):
   if is_left:
     offset = 593
   else:
@@ -83,26 +82,24 @@ def map_crop_to_full(crop_coords, is_left):
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     offset += top
-  full_coords = crop_coords[0], crop_coords[1] + offset
-  return full_coords
+  full_coord = crop_coord[0], crop_coord[1] + offset
+  return full_coord
 
 
 def process_image(h, filename, is_left):
   """Return both screen resolution and scan resolution images."""
   kSaddleHeight = 3600  # scan pixels
-  if is_left:
-    sensor_offset = 593
-  else:
-    sensor_offset = 150
   f = open(filename, "r+b")
   dimensions, headersize = read_pnm_header(f)
   map = mmap.mmap(f.fileno(), 0)
   image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
+  full_coord = map_crop_to_full((0, 0), is_left)
   if book_dimensions:
     (top, bottom, side) = book_dimensions
-    rect = pygame.Rect((0, sensor_offset + top), (side, bottom - top))
+    wh = (side, bottom - top)
   else:
-    rect = pygame.Rect((0, sensor_offset), (image.get_width(), kSaddleHeight))
+    wh = (image.get_width(), kSaddleHeight)
+  rect = pygame.Rect(full_coord, wh)
   crop = image.subsurface(rect)
   w = image.get_width() * h // kSaddleHeight
   surface = pygame.transform.smoothscale(crop, (w, h))
