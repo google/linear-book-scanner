@@ -85,6 +85,20 @@ def crop_to_full_coord(crop_coord, is_left):
   full_coord = crop_coord[0], crop_coord[1] + offset
   return full_coord
 
+def crop_to_full_coord2(crop_coord, is_left):
+  print "crop_coord"
+  print crop_coord
+  x, y = crop_coord
+  if book_dimensions:
+    (top, bottom, side) = book_dimensions
+    y += top
+    if is_left:
+      x = side - x
+  if is_left:
+    y += 593
+  else:
+    y += 150
+  return x, y
 
 def process_image(h, filename, is_left):
   """Return both screen resolution and scan resolution images."""
@@ -291,10 +305,12 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   size = screen.get_height() // 10
   crop_coord, is_left = scale_to_crop_coord(click, scale_size, 
                                             crop_size, epsilon)
+  full_coord = crop_to_full_coord2(crop_coord, is_left)
   if is_left:
-    return
-  full_coord = crop_to_full_coord(crop_coord, is_left)
-  for i in range(2, 100000, 2):
+    start = 1
+  else:
+    start = 2
+  for i in range(start, 100000, 2):
     j = i // 2 - 1
     filename = os.path.join(playground, '%06d.pnm' % i)
     if not os.path.exists(filename):
@@ -307,6 +323,8 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     rect = pygame.Rect(src, (size * 2, size))
     crop = image.subsurface(rect)
     scale = pygame.transform.smoothscale(crop, (size, size // 2))
+    if is_left:
+      scale = pygame.transform.flip(scale, True, False)
     dst = (size * (j % 10), size // 2 * (j // 10))
     dirty = pygame.Rect(dst, (size, size // 2))
     screen.blit(scale, dst)
