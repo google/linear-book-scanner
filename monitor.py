@@ -74,7 +74,7 @@ def read_pnm_header(fp):
   h = int(dimensions.split(" ")[1])
   return (w, h), headersize
 
-def map_coordinates_2(crop_coords, is_left):
+def map_crop_to_full(crop_coords, is_left):
   kSaddleHeight = 3600  # scan pixels
   if is_left:
     offset = 593
@@ -158,16 +158,16 @@ def set_book_dimensions(click, epsilon, crop, surface, playground):
     book_dimensions = None
     os.unlink(filename)
 
-def map_surface_to_crop(surface_coords, surface_size, crop_size, epsilon):
+def map_surface_to_crop(surface_coord, surface_size, crop_size, epsilon):
   w2 = pygame.display.Info().current_w // 2
-  if click[0] < w2:
-    surface_x0 = w2 - epsilon - surface_size[0]
+  if surface_coord[0] < w2:
+    x0 = w2 - epsilon - surface_size[0]
     is_left = True
   else:
-    surface_x0 = w2 + epsilon
+    x0 = w2 + epsilon
     is_left = False
-  x = (click[0] - surface_x0) * crop_size[0] // surface_size[0]
-  y = click[1] * crop_size[1] // surface_size[1]
+  x = (surface_coord[0] - x0) * crop_size[0] // surface_size[0]
+  y = surface_coord[1] * crop_size[1] // surface_size[1]
   return (x, y), is_left
 
 def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
@@ -292,9 +292,9 @@ def render(playground, h, screen, epsilon):
 
 def create_mosaic(screen, playground, click, surface_size, crop_size, epsilon):
   kSize = screen.get_height() // 10
-  crop_coords, is_left = map_surface_to_crop(click, surface_size, 
-                                             crop_size, epsilon)
-  full_coords = map_coordinates_2(crop_coords, is_left)
+  crop_coord, is_left = map_surface_to_crop(click, surface_size, 
+                                            crop_size, epsilon)
+  full_coord = map_crop_to_full(crop_coord, is_left)
   for i in range(2, 100000, 2):
     j = i // 2
     filename = os.path.join(playground, '%06d.pnm' % i)
@@ -305,7 +305,7 @@ def create_mosaic(screen, playground, click, surface_size, crop_size, epsilon):
     dimensions, headersize = read_pnm_header(f)
     image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
     dst = (kSize * (j // 10), kSize * (j % 10))
-    src = full_coords[0] - kSize // 2, full_coords[1] - kSize // 2
+    src = full_coord[0] - kSize // 2, full_coord[1] - kSize // 2
     wh = (kSize, kSize)
     dirty = pygame.Rect(dst, wh)
     screen.blit(image, dst, (src, wh))
