@@ -170,8 +170,8 @@ def set_book_dimensions(click, epsilon, crop_size, scale_size, playground):
 
 def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
-  coordinates, is_left = scale_to_crop_coord(click, scale_a.get_size(),
-                                crop_a.get_size(), epsilon)
+  coord, is_left = scale_to_crop_coord(click, scale_a.get_size(),
+                                       crop_a.get_size(), epsilon)
   if is_left:
     crop_a = pygame.transform.flip(crop_a, True, False)
     crop = crop_a
@@ -182,8 +182,8 @@ def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
   kZoomSize = pygame.display.Info().current_w // 3
   zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)
   screen.blit(crop, zoombox_pos,
-              (coordinates[0] - kZoomSize,
-               coordinates[1] - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
+              (coord[0] - kZoomSize,
+               coord[1] - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
 
 def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
   """Draw the page images on screen."""
