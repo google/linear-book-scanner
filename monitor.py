@@ -128,7 +128,7 @@ def get_book_dimensions(playground):
   except IOError:
     pass
 
-def set_book_dimensions(click, epsilon, crop, scale, playground):
+def set_book_dimensions(click, epsilon, crop_size, scale_size, playground):
   """User has dragged mouse to specify book position in image."""
   global book_dimensions
   down = list(click[0])
@@ -144,9 +144,9 @@ def set_book_dimensions(click, epsilon, crop, scale, playground):
     side = max(down[0], up[0]) - w2 - epsilon 
     top = min(down[1], up[1])
     bottom = max(down[1], up[1])
-    side = side * crop.get_width() // scale.get_width()
-    top = top * crop.get_height() // scale.get_height()
-    bottom = bottom * crop.get_height() // scale.get_height()
+    side = side * crop_size[0] // scale_size[0]
+    top = top * crop_size[1] // scale_size[1]
+    bottom = bottom * crop_size[1] // scale_size[1]
     book_dimensions = (top, bottom, side)
     f = open(filename, "wb")
     f.write("#top,bottom,side\n%s,%s,%s\n" % book_dimensions)
@@ -360,7 +360,8 @@ def main(barcode):
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
         oldscreen = None
         leftclick = (leftdownclick, event.pos)
-        set_book_dimensions(leftclick, epsilon, crop_a, scale_a, playground)
+        set_book_dimensions(leftclick, epsilon, crop_a.get_size(),
+                            scale_a.get_size(), playground)
         clearscreen(screen)
         crop_a, crop_b, scale_a, scale_b = render(playground,
                                                       h, screen, epsilon)
