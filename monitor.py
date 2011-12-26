@@ -74,6 +74,19 @@ def read_pnm_header(fp):
   h = int(dimensions.split(" ")[1])
   return (w, h), headersize
 
+def map_coordinates_2(crop_coords, is_left):
+  kSaddleHeight = 3600  # scan pixels
+  if is_left:
+    offset = 593
+  else:
+    offset = 150
+  if book_dimensions:
+    (top, bottom, side) = book_dimensions
+    offset += top
+  full_coords = crop_coords[0], crop_coords[1] + offset
+  return full_coords
+
+
 def process_image(h, filename, is_left):
   """Return both screen resolution and scan resolution images."""
   kSaddleHeight = 3600  # scan pixels
@@ -95,8 +108,6 @@ def process_image(h, filename, is_left):
   surface = pygame.transform.smoothscale(crop, (w, h))
   if is_left:
     surface = pygame.transform.flip(surface, True, False)
-  map.close()
-  f.close()
   return surface, crop  
 
 def clip_image_number(playground):
@@ -146,28 +157,36 @@ def set_book_dimensions(click, epsilon, crop, surface, playground):
   else:
     book_dimensions = None
     os.unlink(filename)
-  
-def zoombox(screen, click, surface, crop, surface_x0):
-  """Helper function created during refactoring. Draws zoombox"""
-  x = (click[0] - surface_x0) * crop.get_width() // surface.get_width()
-  y = click[1] * crop.get_height() // surface.get_height()
-  if x < 0 or x >= crop.get_width():
-    return
-  kZoomSize = pygame.display.Info().current_w / 3
-  zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)
-  screen.blit(crop, zoombox_pos,
-              (x - kZoomSize, y - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
+
+def map_surface_to_crop(surface_coords, surface_size, crop_size, epsilon):
+  w2 = pygame.display.Info().current_w // 2
+  if click[0] < w2:
+    surface_x0 = w2 - epsilon - surface_size[0]
+    is_left = True
+  else:
+    surface_x0 = w2 + epsilon
+    is_left = False
+  x = (click[0] - surface_x0) * crop_size[0] // surface_size[0]
+  y = click[1] * crop_size[1] // surface_size[1]
+  return (x, y), is_left
 
 def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
+  coordinates, is_left = map_surface_to_crop(click, surface_a.get_size(),
+                                crop_a.get_size(), epsilon)
   w2 = pygame.display.Info().current_w // 2
-  if click[0] < w2:
-    surface_x0 = w2 - epsilon - surface_a.get_width()
-    crop = pygame.transform.flip(crop_a, True, False)
-    zoombox(screen, click, surface_a, crop, surface_x0)
+  if is_left:
+    crop_a = pygame.transform.flip(crop_a, True, False)
+    crop = crop_a
+    surface = surface_a
   else:
-    surface_x0 = w2 + epsilon
-    zoombox(screen, click, surface_b, crop_b, surface_x0)
+    crop = crop_b
+    surface = surface_b
+  kZoomSize = pygame.display.Info().current_w // 3
+  zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)
+  screen.blit(crop, zoombox_pos,
+              (coordinates[0] - kZoomSize,
+               coordinates[1] - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
 
 def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
   """Draw the page images on screen."""
@@ -271,6 +290,29 @@ def render(playground, h, screen, epsilon):
 #  save(crop_a, crop_b, playground, image_number)
   return crop_a, crop_b, surface_a, surface_b
 
+def create_mosaic(screen, playground, click, surface_size, crop_size, epsilon):
+  kSize = screen.get_height() // 10
+  crop_coords, is_left = map_surface_to_crop(click, surface_size, 
+                                             crop_size, epsilon)
+  full_coords = map_coordinates_2(crop_coords, is_left)
+  for i in range(2, 100000, 2):
+    j = i // 2
+    filename = os.path.join(playground, '%06d.pnm' % i)
+    if not os.path.exists(filename):
+      break
+    f = open(filename, "r+b")
+    map = mmap.mmap(f.fileno(), 0)
+    dimensions, headersize = read_pnm_header(f)
+    image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
+    dst = (kSize * (j // 10), kSize * (j % 10))
+    src = full_coords[0] - kSize // 2, full_coords[1] - kSize // 2
+    wh = (kSize, kSize)
+    dirty = pygame.Rect(dst, wh)
+    screen.blit(image, dst, (src, wh))
+    map.close()
+    f.close()
+    pygame.display.update(dirty)
+
 def main(barcode):
   """Display scanned images as they are created."""
   pygame.init()
@@ -327,14 +369,18 @@ def main(barcode):
                                                       h, screen, epsilon)
         busy = False
       elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-        rightclick = event.pos
         draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-        zoom(screen, rightclick, epsilon, surface_a, surface_b, crop_a, crop_b)
+        zoom(screen, event.pos, epsilon, surface_a, surface_b, crop_a, crop_b)
         pygame.display.update()
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
         clearscreen(screen)
         draw(screen, image_number, surface_a, surface_b, epsilon, paused)
         pygame.display.update()
+        busy = False
+      elif event.type == pygame.MOUSEBUTTONUP and event.button == 2:
+        clearscreen(screen)
+        create_mosaic(screen, playground, event.pos,
+                      surface_a.get_size(), crop_a.get_size(), epsilon)
         busy = False
       elif event.type == pygame.QUIT:
         pygame.quit()
