@@ -102,10 +102,10 @@ def process_image(h, filename, is_left):
   rect = pygame.Rect(full_coord, wh)
   crop = image.subsurface(rect)
   w = image.get_width() * h // kSaddleHeight
-  surface = pygame.transform.smoothscale(crop, (w, h))
+  scale = pygame.transform.smoothscale(crop, (w, h))
   if is_left:
-    surface = pygame.transform.flip(surface, True, False)
-  return surface, crop  
+    scale = pygame.transform.flip(scale, True, False)
+  return scale, crop  
 
 def clip_image_number(playground):
   """Only show images that exist."""
@@ -128,7 +128,7 @@ def get_book_dimensions(playground):
   except IOError:
     pass
 
-def set_book_dimensions(click, epsilon, crop, surface, playground):
+def set_book_dimensions(click, epsilon, crop, scale, playground):
   """User has dragged mouse to specify book position in image."""
   global book_dimensions
   down = list(click[0])
@@ -144,9 +144,9 @@ def set_book_dimensions(click, epsilon, crop, surface, playground):
     side = max(down[0], up[0]) - w2 - epsilon 
     top = min(down[1], up[1])
     bottom = max(down[1], up[1])
-    side = side * crop.get_width() // surface.get_width()
-    top = top * crop.get_height() // surface.get_height()
-    bottom = bottom * crop.get_height() // surface.get_height()
+    side = side * crop.get_width() // scale.get_width()
+    top = top * crop.get_height() // scale.get_height()
+    bottom = bottom * crop.get_height() // scale.get_height()
     book_dimensions = (top, bottom, side)
     f = open(filename, "wb")
     f.write("#top,bottom,side\n%s,%s,%s\n" % book_dimensions)
@@ -155,43 +155,43 @@ def set_book_dimensions(click, epsilon, crop, surface, playground):
     book_dimensions = None
     os.unlink(filename)
 
-def map_surface_to_crop(surface_coord, surface_size, crop_size, epsilon):
+def map_scale_to_crop(scale_coord, scale_size, crop_size, epsilon):
   w2 = pygame.display.Info().current_w // 2
-  if surface_coord[0] < w2:
-    x0 = w2 - epsilon - surface_size[0]
+  if scale_coord[0] < w2:
+    x0 = w2 - epsilon - scale_size[0]
     is_left = True
   else:
     x0 = w2 + epsilon
     is_left = False
-  x = (surface_coord[0] - x0) * crop_size[0] // surface_size[0]
-  y = surface_coord[1] * crop_size[1] // surface_size[1]
+  x = (scale_coord[0] - x0) * crop_size[0] // scale_size[0]
+  y = scale_coord[1] * crop_size[1] // scale_size[1]
   return (x, y), is_left
 
-def zoom(screen, click, epsilon, surface_a, surface_b, crop_a, crop_b):
+def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
-  coordinates, is_left = map_surface_to_crop(click, surface_a.get_size(),
+  coordinates, is_left = map_scale_to_crop(click, scale_a.get_size(),
                                 crop_a.get_size(), epsilon)
   w2 = pygame.display.Info().current_w // 2
   if is_left:
     crop_a = pygame.transform.flip(crop_a, True, False)
     crop = crop_a
-    surface = surface_a
+    scale = scale_a
   else:
     crop = crop_b
-    surface = surface_b
+    scale = scale_b
   kZoomSize = pygame.display.Info().current_w // 3
   zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)
   screen.blit(crop, zoombox_pos,
               (coordinates[0] - kZoomSize,
                coordinates[1] - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
 
-def draw(screen, image_number, surface_a, surface_b, epsilon, paused):
+def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
   """Draw the page images on screen."""
   (w, h) = screen.get_size()
   render_text(screen, "%d           " % image_number, "upperleft")
   render_text(screen, "           %d" % (image_number + 1), "upperright")
-  screen.blit(surface_a, (w // 2 - surface_a.get_width() - epsilon, 0))
-  screen.blit(surface_b, (w // 2 + epsilon, 0))
+  screen.blit(scale_a, (w // 2 - scale_a.get_width() - epsilon, 0))
+  screen.blit(scale_b, (w // 2 + epsilon, 0))
   if paused:
     render_text(screen, "**  pause  **", "upperleft")
 
@@ -280,16 +280,16 @@ def render(playground, h, screen, epsilon):
   global image_number
   filename_a = '%s/%06d.pnm' % (playground, image_number)
   filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
-  surface_a, crop_a = process_image(h, filename_a, True)
-  surface_b, crop_b = process_image(h, filename_b, False)
-  draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+  scale_a, crop_a = process_image(h, filename_a, True)
+  scale_b, crop_b = process_image(h, filename_b, False)
+  draw(screen, image_number, scale_a, scale_b, epsilon, paused)
   pygame.display.update()
 #  save(crop_a, crop_b, playground, image_number)
-  return crop_a, crop_b, surface_a, surface_b
+  return crop_a, crop_b, scale_a, scale_b
 
-def create_mosaic(screen, playground, click, surface_size, crop_size, epsilon):
+def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   kSize = screen.get_height() // 10
-  crop_coord, is_left = map_surface_to_crop(click, surface_size, 
+  crop_coord, is_left = map_scale_to_crop(click, scale_size, 
                                             crop_size, epsilon)
   full_coord = map_crop_to_full(crop_coord, is_left)
   for i in range(2, 100000, 2):
@@ -360,24 +360,24 @@ def main(barcode):
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
         oldscreen = None
         leftclick = (leftdownclick, event.pos)
-        set_book_dimensions(leftclick, epsilon, crop_a, surface_a, playground)
+        set_book_dimensions(leftclick, epsilon, crop_a, scale_a, playground)
         clearscreen(screen)
-        crop_a, crop_b, surface_a, surface_b = render(playground,
+        crop_a, crop_b, scale_a, scale_b = render(playground,
                                                       h, screen, epsilon)
         busy = False
       elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
-        zoom(screen, event.pos, epsilon, surface_a, surface_b, crop_a, crop_b)
+        draw(screen, image_number, scale_a, scale_b, epsilon, paused)
+        zoom(screen, event.pos, epsilon, scale_a, scale_b, crop_a, crop_b)
         pygame.display.update()
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
         clearscreen(screen)
-        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+        draw(screen, image_number, scale_a, scale_b, epsilon, paused)
         pygame.display.update()
         busy = False
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 2:
         clearscreen(screen)
         create_mosaic(screen, playground, event.pos,
-                      surface_a.get_size(), crop_a.get_size(), epsilon)
+                      scale_a.get_size(), crop_a.get_size(), epsilon)
         busy = False
       elif event.type == pygame.QUIT:
         pygame.quit()
@@ -386,7 +386,7 @@ def main(barcode):
         newscreen = handle_key_event(screen, event, playground)
         if newscreen:
           screen = newscreen
-        draw(screen, image_number, surface_a, surface_b, epsilon, paused)
+        draw(screen, image_number, scale_a, scale_b, epsilon, paused)
         pygame.display.update()
       elif event.type == pygame.USEREVENT:
         if busy:
@@ -396,8 +396,8 @@ def main(barcode):
           clip_image_number(playground)
         if image_number != last_drawn_image_number:
           try:
-            crop_a, crop_b, surface_a, surface_b = render(playground, 
-                                                          h, screen, epsilon)
+            crop_a, crop_b, scale_a, scale_b = render(playground, 
+                                                      h, screen, epsilon)
             last_drawn_image_number = image_number
             if not paused:
               beep.play()
