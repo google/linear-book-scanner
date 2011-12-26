@@ -75,17 +75,6 @@ def read_pnm_header(fp):
   return (w, h), headersize
 
 def crop_to_full_coord(crop_coord, is_left):
-  if is_left:
-    offset = 593
-  else:
-    offset = 150
-  if book_dimensions:
-    (top, bottom, side) = book_dimensions
-    offset += top
-  full_coord = crop_coord[0], crop_coord[1] + offset
-  return full_coord
-
-def crop_to_full_coord2(crop_coord, is_left):
   x, y = crop_coord
   if book_dimensions:
     (top, bottom, side) = book_dimensions
@@ -105,13 +94,13 @@ def process_image(h, filename, is_left):
   dimensions, headersize = read_pnm_header(f)
   map = mmap.mmap(f.fileno(), 0)
   image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
-  coord = crop_to_full_coord((0, 0), is_left)
+  unused, y = crop_to_full_coord((0, 0), is_left)
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     wh = (side, bottom - top)
   else:
     wh = (image.get_width(), kSaddleHeight)
-  rect = pygame.Rect(coord, wh)
+  rect = pygame.Rect((0, y), wh)
   crop = image.subsurface(rect)
   w = image.get_width() * h // kSaddleHeight
   scale = pygame.transform.smoothscale(crop, (w, h))
@@ -302,7 +291,7 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   size = screen.get_height() // 10
   crop_coord, is_left = scale_to_crop_coord(click, scale_size, 
                                             crop_size, epsilon)
-  full_coord = crop_to_full_coord2(crop_coord, is_left)
+  full_coord = crop_to_full_coord(crop_coord, is_left)
   if is_left:
     start = 1
   else:
