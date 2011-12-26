@@ -74,6 +74,18 @@ def read_pnm_header(fp):
   h = int(dimensions.split(" ")[1])
   return (w, h), headersize
 
+def scale_to_crop_coord(scale_coord, scale_size, crop_size, epsilon):
+  w2 = pygame.display.Info().current_w // 2
+  if scale_coord[0] < w2:
+    x0 = w2 - epsilon - scale_size[0]
+    is_left = True
+  else:
+    x0 = w2 + epsilon
+    is_left = False
+  x = (scale_coord[0] - x0) * crop_size[0] // scale_size[0]
+  y = scale_coord[1] * crop_size[1] // scale_size[1]
+  return (x, y), is_left
+
 def crop_to_full_coord(crop_coord, is_left):
   x, y = crop_coord
   if book_dimensions:
@@ -155,18 +167,6 @@ def set_book_dimensions(click, epsilon, crop_size, scale_size, playground):
   else:
     book_dimensions = None
     os.unlink(filename)
-
-def scale_to_crop_coord(scale_coord, scale_size, crop_size, epsilon):
-  w2 = pygame.display.Info().current_w // 2
-  if scale_coord[0] < w2:
-    x0 = w2 - epsilon - scale_size[0]
-    is_left = True
-  else:
-    x0 = w2 + epsilon
-    is_left = False
-  x = (scale_coord[0] - x0) * crop_size[0] // scale_size[0]
-  y = scale_coord[1] * crop_size[1] // scale_size[1]
-  return (x, y), is_left
 
 def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
