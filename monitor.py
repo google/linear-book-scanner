@@ -74,7 +74,7 @@ def read_pnm_header(fp):
   h = int(dimensions.split(" ")[1])
   return (w, h), headersize
 
-def map_crop_to_full(crop_coord, is_left):
+def crop_to_full_coord(crop_coord, is_left):
   if is_left:
     offset = 593
   else:
@@ -93,7 +93,7 @@ def process_image(h, filename, is_left):
   dimensions, headersize = read_pnm_header(f)
   map = mmap.mmap(f.fileno(), 0)
   image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
-  full_coord = map_crop_to_full((0, 0), is_left)
+  full_coord = crop_to_full_coord((0, 0), is_left)
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     wh = (side, bottom - top)
@@ -155,7 +155,7 @@ def set_book_dimensions(click, epsilon, crop_size, scale_size, playground):
     book_dimensions = None
     os.unlink(filename)
 
-def map_scale_to_crop(scale_coord, scale_size, crop_size, epsilon):
+def scale_to_crop_coord(scale_coord, scale_size, crop_size, epsilon):
   w2 = pygame.display.Info().current_w // 2
   if scale_coord[0] < w2:
     x0 = w2 - epsilon - scale_size[0]
@@ -169,7 +169,7 @@ def map_scale_to_crop(scale_coord, scale_size, crop_size, epsilon):
 
 def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
-  coordinates, is_left = map_scale_to_crop(click, scale_a.get_size(),
+  coordinates, is_left = scale_to_crop_coord(click, scale_a.get_size(),
                                 crop_a.get_size(), epsilon)
   w2 = pygame.display.Info().current_w // 2
   if is_left:
@@ -289,9 +289,9 @@ def render(playground, h, screen, epsilon):
 
 def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   kSize = screen.get_height() // 10
-  crop_coord, is_left = map_scale_to_crop(click, scale_size, 
+  crop_coord, is_left = scale_to_crop_coord(click, scale_size, 
                                             crop_size, epsilon)
-  full_coord = map_crop_to_full(crop_coord, is_left)
+  full_coord = crop_to_full_coord(crop_coord, is_left)
   for i in range(2, 100000, 2):
     j = i // 2
     filename = os.path.join(playground, '%06d.pnm' % i)
