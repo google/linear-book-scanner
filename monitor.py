@@ -84,6 +84,8 @@ def scale_to_crop_coord(scale_coord, scale_size, crop_size, epsilon):
     is_left = False
   x = (scale_coord[0] - x0) * crop_size[0] // scale_size[0]
   y = scale_coord[1] * crop_size[1] // scale_size[1]
+  if is_left:
+    x = crop_size[0] - x
   return (x, y), is_left
 
 def crop_to_full_coord(crop_coord, is_left):
@@ -91,11 +93,6 @@ def crop_to_full_coord(crop_coord, is_left):
   if book_dimensions:
     (top, bottom, side) = book_dimensions
     y += top
-  if is_left:
-    if book_dimensions:
-      x = side - x
-    else:
-      x = 2550 - x   # Violation
   if is_left:
     y += 593
   else:
@@ -176,18 +173,20 @@ def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
   coord, is_left = scale_to_crop_coord(click, scale_a.get_size(),
                                        crop_a.get_size(), epsilon)
   if is_left:
-    crop_a = pygame.transform.flip(crop_a, True, False)
     crop = crop_a
-    scale = scale_a
   else:
     crop = crop_b
-    scale = scale_b
-  kZoomSize = pygame.display.Info().current_w // 3
-  zoombox_pos = (click[0] - kZoomSize, click[1] - kZoomSize)
-  screen.blit(crop, zoombox_pos,
-              (coord[0] - kZoomSize,
-               coord[1] - kZoomSize, 2 * kZoomSize, 2 * kZoomSize))
-
+  size = pygame.display.Info().current_w // 3
+  dst = (click[0] - size, click[1] - size)
+  rect = pygame.Rect((coord[0] - size, coord[1] - size), (2 * size, 2 * size))
+  if is_left:
+    tmp = pygame.Surface((2 * size, 2 * size))
+    tmp.blit(crop, (0,0), rect)
+    tmp2 = pygame.transform.flip(tmp, True, False)
+    screen.blit(tmp2, dst)
+  else:
+    screen.blit(crop, dst, rect)
+    
 def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
   """Draw the page images on screen."""
   (w, h) = screen.get_size()
