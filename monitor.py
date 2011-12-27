@@ -52,7 +52,7 @@ def render_text(screen, msg, position):
     screen.blit(text, pos)
     pos[1] += 30
 
-def read_pnm_header(fp):
+def read_ppm_header(fp):
   """Read dimensions and headersize from a PPM file."""
   headersize = 0
   magic_number = fp.readline()
@@ -75,6 +75,7 @@ def read_pnm_header(fp):
   return (w, h), headersize
 
 def scale_to_crop_coord(scale_coord, scale_size, crop_size, epsilon):
+  """Scale images are displayed 2-up in the screen."""
   w2 = pygame.display.Info().current_w // 2
   if scale_coord[0] < w2:
     x0 = w2 - epsilon - scale_size[0]
@@ -89,6 +90,7 @@ def scale_to_crop_coord(scale_coord, scale_size, crop_size, epsilon):
   return (x, y), is_left
 
 def crop_to_full_coord(crop_coord, is_left):
+  """We always crop out saddle, and usually crop to book page."""
   x, y = crop_coord
   if book_dimensions:
     (top, bottom, side) = book_dimensions
@@ -103,7 +105,7 @@ def process_image(h, filename, is_left):
   """Return both screen resolution and scan resolution images."""
   kSaddleHeight = 3600  # scan pixels
   f = open(filename, "r+b")
-  dimensions, headersize = read_pnm_header(f)
+  dimensions, headersize = read_ppm_header(f)
   map = mmap.mmap(f.fileno(), 0)
   image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
   unused, y = crop_to_full_coord((0, 0), is_left)
@@ -305,7 +307,7 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
       break
     f = open(filename, "r+b")
     map = mmap.mmap(f.fileno(), 0)
-    dimensions, headersize = read_pnm_header(f)
+    dimensions, headersize = read_ppm_header(f)
     image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
     src = full_coord[0] - size, full_coord[1] - size // 2
     rect = pygame.Rect(src, (size * 2, size))
