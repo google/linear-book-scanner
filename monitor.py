@@ -321,6 +321,7 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     map.close()
     f.close()
     pygame.display.update(dirty)
+  clearscreen(screen)
 
 def main(barcode):
   """Display scanned images as they are created."""
