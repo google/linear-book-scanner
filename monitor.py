@@ -236,8 +236,9 @@ def splashscreen(screen, barcode):
   clearscreen(screen)
   render_text(screen, get_bibliography(barcode), "upperleft")
   render_text(screen, ("\n\n\n\n\n\n\n\n\n\n"
-                       "R MOUSE     = zoom\n"
                        "L MOUSE     = crop\n"
+                       "M MOUSE     = mosaic\n"
+                       "R MOUSE     = crop\n"
                        "SPACE       = pause\n"
                        "F11         = fullscreen\n"
                        "ARROWS      = navigation\n"
