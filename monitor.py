@@ -348,7 +348,7 @@ def main(argv1):
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
-  pygame.time.set_timer(pygame.USEREVENT, 10)
+  pygame.time.set_timer(pygame.USEREVENT, 50)
   shadow = pygame.Surface(screen.get_size())
   shadow.set_alpha(128)
   shadow.fill((0, 0, 0))
