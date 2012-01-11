@@ -207,8 +207,9 @@ def save(crop_a, crop_b, playground, image_number):
     pass
   filename_a = '%s/export/%06d.jpg' % (playground, 999999 - image_number + 1)
   filename_b = '%s/export/%06d.jpg' % (playground, 999999 - image_number)
+  a = pygame.transform.flip(crop_a, True, False)
   pygame.image.save(crop_b, filename_a)
-  pygame.image.save(crop_a, filename_b)
+  pygame.image.save(a, filename_b)
 
 def get_bibliography(barcode):
   """Hit up Google Books for bibliographic data. Thanks, Leonid."""
