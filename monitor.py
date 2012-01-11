@@ -240,7 +240,7 @@ def splashscreen(screen, barcode):
                        "M MOUSE     = mosaic\n"
                        "R MOUSE     = crop\n"
                        "SPACE       = pause\n"
-                       "H           = help\n"
+                       "?           = help\n"
                        "F11         = fullscreen\n"
                        "ARROWS      = navigation\n"
                        "PgUp/PgDn   = navigation!\n"
@@ -278,7 +278,7 @@ def handle_key_event(screen, event, playground, barcode):
     image_number += 2
   elif event.key == pygame.K_PAGEDOWN:
     image_number += 10
-  elif event.key == pygame.K_h:
+  elif event.key == pygame.K_h or event.key == pygame.K_QUESTION:
     splashscreen(screen, barcode)
     pygame.time.wait(3000)
   clip_image_number(playground)
