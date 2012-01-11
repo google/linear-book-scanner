@@ -240,6 +240,7 @@ def splashscreen(screen, barcode):
                        "M MOUSE     = mosaic\n"
                        "R MOUSE     = crop\n"
                        "SPACE       = pause\n"
+                       "H           = help\n"
                        "F11         = fullscreen\n"
                        "ARROWS      = navigation\n"
                        "PgUp/PgDn   = navigation!\n"
@@ -248,7 +249,7 @@ def splashscreen(screen, barcode):
   clearscreen(screen)
   pygame.time.wait(2000)
 
-def handle_key_event(screen, event, playground):
+def handle_key_event(screen, event, playground, barcode):
   global image_number
   global paused
   global fullscreen
@@ -277,12 +278,13 @@ def handle_key_event(screen, event, playground):
     image_number += 2
   elif event.key == pygame.K_PAGEDOWN:
     image_number += 10
+  elif event.key == pygame.K_h:
+    splashscreen(screen, barcode)
+    pygame.time.wait(3000)
   clip_image_number(playground)
   return newscreen
 
-def render(playground, h, screen, epsilon):
-  global paused
-  global image_number
+def render(playground, h, screen, epsilon, paused, image_number):
   filename_a = '%s/%06d.pnm' % (playground, image_number)
   filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
   scale_a, crop_a = process_image(h, filename_a, True)
@@ -324,15 +326,18 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     pygame.display.update(dirty)
   clearscreen(screen)
 
-def main(barcode):
+def main(argv1):
   """Display scanned images as they are created."""
+  playground_dir, barcode = os.path.split(argv1)
+  print playground_dir
+  if not playground_dir:
+    playground_dir = "/var/tmp/playground/"
+  playground = os.path.join(playground_dir, barcode)
   pygame.init()
   global image_number
   global paused
-  global fullscreen
   global book_dimensions
   last_drawn_image_number = 0
-  playground = "/var/tmp/playground/%s" % barcode
   get_book_dimensions(playground)
   beep = pygame.mixer.Sound('beep.wav')
   h = pygame.display.Info().current_h
@@ -377,8 +382,8 @@ def main(barcode):
         set_book_dimensions(leftclick, epsilon, crop_a.get_size(),
                             scale_a.get_size(), playground)
         clearscreen(screen)
-        crop_a, crop_b, scale_a, scale_b = render(playground,
-                                                      h, screen, epsilon)
+        crop_a, crop_b, scale_a, scale_b = render(playground, h, screen,
+                                                  epsilon, paused, image_number)
         busy = False
       elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
         draw(screen, image_number, scale_a, scale_b, epsilon, paused)
@@ -398,7 +403,7 @@ def main(barcode):
         pygame.quit()
         sys.exit()
       elif event.type == pygame.KEYDOWN:
-        newscreen = handle_key_event(screen, event, playground)
+        newscreen = handle_key_event(screen, event, playground, barcode)
         if newscreen:
           screen = newscreen
         draw(screen, image_number, scale_a, scale_b, epsilon, paused)
@@ -411,8 +416,9 @@ def main(barcode):
           clip_image_number(playground)
         if image_number != last_drawn_image_number:
           try:
-            crop_a, crop_b, scale_a, scale_b = render(playground, 
-                                                      h, screen, epsilon)
+            crop_a, crop_b, scale_a, scale_b = render(playground, h, screen,
+                                                      epsilon, paused,
+                                                      image_number)
             last_drawn_image_number = image_number
             if not paused:
               beep.play()
