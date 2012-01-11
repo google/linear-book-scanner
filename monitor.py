@@ -201,6 +201,9 @@ def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
 
 def save(crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
+  global book_dimensions
+  if book_dimensions is None:  # the book is not cropped
+    return
   try:
     os.mkdir(os.path.join(playground, 'export'))
   except OSError:
@@ -292,7 +295,7 @@ def render(playground, h, screen, epsilon, paused, image_number):
   scale_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, scale_a, scale_b, epsilon, paused)
   pygame.display.update()
-#  save(crop_a, crop_b, playground, image_number)
+  save(crop_a, crop_b, playground, image_number)
   return crop_a, crop_b, scale_a, scale_b
 
 def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
