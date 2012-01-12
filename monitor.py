@@ -22,6 +22,8 @@ import os.path
 import urllib2
 import BaseHTTPServer
 import mmap
+import cStringIO
+import base64
 
 paused = False           # For image inspection
 image_number = 1         # Scanimage starts counting at 1
@@ -120,7 +122,7 @@ def process_image(h, filename, is_left):
   scale = pygame.transform.smoothscale(crop, (w, h))
   if is_left:
     scale = pygame.transform.flip(scale, True, False)
-  return scale, crop  
+  return scale, crop
 
 def clip_image_number(playground):
   """Only show images that exist."""
@@ -156,7 +158,7 @@ def set_book_dimensions(click, epsilon, crop_size, scale_size, playground):
     up[0] =  abs(w2 - up[0]) + w2
     if min(abs(down[1] - up[1]), abs(up[0] - w2)) < min_book_dimension:
       return
-    side = max(down[0], up[0]) - w2 - epsilon 
+    side = max(down[0], up[0]) - w2 - epsilon
     top = min(down[1], up[1])
     bottom = max(down[1], up[1])
     side = side * crop_size[0] // scale_size[0]
@@ -188,7 +190,7 @@ def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
     screen.blit(tmp2, dst)
   else:
     screen.blit(crop, dst, rect)
-    
+
 def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
   """Draw the page images on screen."""
   (w, h) = screen.get_size()
@@ -300,7 +302,7 @@ def render(playground, h, screen, epsilon, paused, image_number):
 
 def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   size = screen.get_height() // 10
-  crop_coord, is_left = scale_to_crop_coord(click, scale_size, 
+  crop_coord, is_left = scale_to_crop_coord(click, scale_size,
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
   if is_left:
@@ -330,6 +332,22 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     pygame.display.update(dirty)
   clearscreen(screen)
 
+def get_beep():
+  wav = """
+UklGRigCAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQQCAAA01jVaF1f2WGJW1FoN
+U5hhMcMxoKCoiqhcogiwOJTK/zxqak9fXHxWrFYcXv08rZtQrhShk6wBoXaudZtGPcZdBlcnVqdc
+N09Tatf//pN7sKKhmKkypwui3sBzZJhP+V5tUfBeq09XZALB36Fnp1mp7KEksGWUXv/eappOVV1n
+VdhX41w7Pm6ai6/hn7yt5Z+Cr3uaLD71XMJXgVU4XbpOu2qE/z2UT7C9oYupM6cVosvAjGR5Tx9f
+QVEgX3hPimTQwA+iOqeEqcKhS7BBlIH/vmq2TjxdfVXGV/FcMD53moWv45+8reOfhq92mjE+71zI
+V3xVPF22Tr9qf/9ClEuwwqGFqTinEKLQwItkd08gX0JRHl96T4pkzsASojenhanDoUuwQJSC/7xq
+uE48XXxVx1fxXC4+epqCr+afuq3kn4Wvd5oxPu9cx1d9VTtduE6+an7/RZRGsMihfqk/pwui1MCG
+ZHxPG19HURpffU+HZNHAEKI4p4apwKFPsDuUh/+2asJOLl2NVbNXBV0cPouaca/5n6Wt+p9wr4ma
+Ij77XMFXfFVDXalO0mpm/2OUILD2oUipgKe+oSzBImTtT6FeyFGTXghQ+mNgwYGhw6cCqTmi5K+W
+lED/5WqsTiddtVVnV3pdej1bm3OuJKFNrH+hv61knCI8GF+PVbVXG1uUUIZp4f4=
+"""
+  f = cStringIO.StringIO(base64.decodestring(wav))
+  return pygame.mixer.Sound(f)
+
 def main(argv1):
   """Display scanned images as they are created."""
   playground_dir, barcode = os.path.split(argv1)
@@ -343,7 +361,7 @@ def main(argv1):
   global book_dimensions
   last_drawn_image_number = 0
   get_book_dimensions(playground)
-  beep = pygame.mixer.Sound('beep.wav')
+  beep = get_beep()
   h = pygame.display.Info().current_h
   w = pygame.display.Info().current_w
   epsilon = w // 100
@@ -363,7 +381,7 @@ def main(argv1):
         pygame.event.clear(pygame.USEREVENT)
       if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
         leftdownclick = event.pos
-        oldscreen = screen.copy()  
+        oldscreen = screen.copy()
         shadowscreen = screen.copy()
         shadowscreen.blit(shadow, (0, 0))
         screen.blit(shadowscreen, (0, 0))
