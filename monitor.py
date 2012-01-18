@@ -242,14 +242,14 @@ def splashscreen(screen, barcode):
   clearscreen(screen)
   render_text(screen, get_bibliography(barcode), "upperleft")
   render_text(screen, ("\n\n\n\n\n\n\n\n\n\n"
-                       "L MOUSE     = crop\n"
-                       "M MOUSE     = mosaic\n"
-                       "R MOUSE     = crop\n"
-                       "SPACE       = pause\n"
-                       "?           = help\n"
-                       "F11         = fullscreen\n"
+                       "H,?         = help\n"
+                       "MOUSE       = crop | mosaic | zoom\n"
                        "ARROWS      = navigation\n"
                        "PgUp/PgDn   = navigation!\n"
+                       "\n"
+                       "S           = screenshot\n"
+                       "F11         = fullscreen\n"
+                       "Q,ESC       = quit\n"
                        ), "upperleft")
   pygame.display.update()
   clearscreen(screen)
@@ -284,6 +284,12 @@ def handle_key_event(screen, event, playground, barcode):
     image_number += 2
   elif event.key == pygame.K_PAGEDOWN:
     image_number += 10
+  elif event.key == pygame.K_s:
+    filename = "screenshot-" + barcode + "-" + str(image_number) + ".jpg"
+    pygame.image.save(screen, filename);
+    render_text(screen, filename, "upperright")
+    pygame.display.update()
+    pygame.time.wait(2000)
   elif event.key == pygame.K_h or event.key == pygame.K_QUESTION:
     splashscreen(screen, barcode)
     pygame.time.wait(3000)
