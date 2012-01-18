@@ -307,7 +307,7 @@ def render(playground, h, screen, epsilon, paused, image_number):
   return crop_a, crop_b, scale_a, scale_b
 
 def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
-  size = screen.get_height() // 10
+  size = (screen.get_height() // 10, screen.get_height() // 20)
   crop_coord, is_left = scale_to_crop_coord(click, scale_size,
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
@@ -324,14 +324,14 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     map = mmap.mmap(f.fileno(), 0)
     dimensions, headersize = read_ppm_header(f)
     image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
-    src = full_coord[0] - size, full_coord[1] - size // 2
-    rect = pygame.Rect(src, (size * 2, size))
+    src = full_coord[0] - size[0], full_coord[1] - size[1]
+    rect = pygame.Rect(src, (size[0] * 2, size[1] * 2))
     crop = image.subsurface(rect)
-    scale = pygame.transform.smoothscale(crop, (size, size // 2))
+    scale = pygame.transform.smoothscale(crop, size)
     if is_left:
       scale = pygame.transform.flip(scale, True, False)
-    dst = (size * (j % 10), size // 2 * (j // 10))
-    dirty = pygame.Rect(dst, (size, size // 2))
+    dst = (size[0] * (j % 10), size[1] * (j // 10))
+    dirty = pygame.Rect(dst, size)
     screen.blit(scale, dst)
     map.close()
     f.close()
