@@ -317,7 +317,8 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   if not is_left:
     start += 1
   for i in range(start, start + windowsize, 2):
-    j = i // 2 - 1
+    x = (i - start) % 10
+    y = (i - start) // 20
     filename = os.path.join(playground, '%06d.pnm' % i)
     if not os.path.exists(filename):
       break
@@ -331,7 +332,7 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     scale = pygame.transform.smoothscale(crop, size)
     if is_left:
       scale = pygame.transform.flip(scale, True, False)
-    dst = (size[0] * (j % 10), size[1] * (j // 10))
+    dst = (size[0] * x, size[1] * y)
     dirty = pygame.Rect(dst, size)
     screen.blit(scale, dst)
     map.close()
