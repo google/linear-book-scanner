@@ -235,6 +235,7 @@ def get_bibliography(barcode):
   return "Unknown Barcode: %s" % barcode.split("_")[0]
 
 def splashscreen(screen, barcode):
+  """Like opening credits in a movie, but more useful."""
   clearscreen(screen)
   render_text(screen, "Looking up barcode: %s" % barcode.split("_")[0],
               "upperleft")
@@ -256,6 +257,7 @@ def splashscreen(screen, barcode):
   pygame.time.wait(2000)
 
 def handle_key_event(screen, event, playground, barcode, mosaic_click):
+  """I found it easier to deal with keystrokes (mostly) in one place."""
   global image_number
   global paused
   global fullscreen
@@ -299,6 +301,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
   return newscreen
 
 def render(playground, h, screen, epsilon, paused, image_number):
+  """Render and entire screen, including book images and labels."""
   filename_a = '%s/%06d.pnm' % (playground, image_number)
   filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
   scale_a, crop_a = process_image(h, filename_a, True)
@@ -309,6 +312,7 @@ def render(playground, h, screen, epsilon, paused, image_number):
   return crop_a, crop_b, scale_a, scale_b, image_number
 
 def mosaic_dimensions(screen):
+  """Reduce some cut-n-past code. Everyone still assumes 20x20 mosaic."""
   n = 10
   size = (screen.get_height() // n, screen.get_height() // (2 * n))
   windowsize = 4 * n * n
@@ -316,6 +320,7 @@ def mosaic_dimensions(screen):
   return size, windowsize, start
 
 def navigate_mosaic(playground, screen, click):
+  """Click on a mosaic tile, jump to that page."""
   global image_number
   clearscreen(screen)
   size, windowsize, start = mosaic_dimensions(screen)
@@ -328,6 +333,7 @@ def navigate_mosaic(playground, screen, click):
     image_number = candidate
 
 def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
+  """Useful for seeing lots of page numbers at once."""
   crop_coord, is_left = scale_to_crop_coord(click, scale_size,
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
@@ -358,6 +364,7 @@ def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     pygame.display.update(dirty)
 
 def get_beep():
+  """Not having as external file makes life easier for sysadmins."""
   wav = """
 UklGRigCAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQQCAAA01jVaF1f2WGJW1FoN
 U5hhMcMxoKCoiqhcogiwOJTK/zxqak9fXHxWrFYcXv08rZtQrhShk6wBoXaudZtGPcZdBlcnVqdc
