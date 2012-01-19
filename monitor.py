@@ -313,11 +313,11 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
   windowsize = 4 * n * n
-  start = max(1, image_number - windowsize)
+  start = max(1, image_number - windowsize + 2)
   if not is_left:
     start += 1
   for i in range(start, start + windowsize, 2):
-    x = (i - start) % 10
+    x = ((i - start) // 2) % 10
     y = (i - start) // 20
     filename = os.path.join(playground, '%06d.pnm' % i)
     if not os.path.exists(filename):
