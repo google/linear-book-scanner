@@ -304,7 +304,7 @@ def render(playground, h, screen, epsilon, paused, image_number):
   draw(screen, image_number, scale_a, scale_b, epsilon, paused)
   pygame.display.update()
   save(crop_a, crop_b, playground, image_number)
-  return crop_a, crop_b, scale_a, scale_b
+  return crop_a, crop_b, scale_a, scale_b, image_number
 
 def mosaic_dimensions(screen):
   n = 10
@@ -353,6 +353,7 @@ def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     map.close()
     f.close()
     pygame.display.update(dirty)
+  clearscreen(screen)
 
 def get_beep():
   wav = """
@@ -395,7 +396,7 @@ def main(argv1):
   shadow = pygame.Surface(screen.get_size())
   shadow.set_alpha(128)
   shadow.fill((0, 0, 0))
-  mosaic = False  # Don't mode me in, bro!
+  mosaic_click = None  # Don't mode me in, bro!
   busy = False
   while True:
     for event in [ pygame.event.wait() ]:
@@ -403,7 +404,7 @@ def main(argv1):
         busy = True
         pygame.event.clear(pygame.USEREVENT)
       if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        if mosaic:
+        if mosaic_click:
           continue
         leftdownclick = event.pos
         oldscreen = screen.copy()
@@ -413,7 +414,7 @@ def main(argv1):
         prevroi = pygame.Rect(event.pos, (0, 0))
         pygame.display.update()
       elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
-        if book_dimensions or mosaic:
+        if book_dimensions or mosaic_click:
           continue
         x = abs(event.pos[0] - w // 2)
         pos = (w // 2 - x, min(leftdownclick[1], event.pos[1]))
@@ -424,40 +425,57 @@ def main(argv1):
         screen.blit(oldscreen, roi.topleft, area = roi)
         pygame.display.update(dirty)
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-        if mosaic:
+        if mosaic_click:
           navigate_mosaic(playground, screen, event.pos)
-          mosaic = False
+          last_drawn_image_number = None
+          mosaic_click = None
         else:
           oldscreen = None
           leftclick = (leftdownclick, event.pos)
           set_book_dimensions(leftclick, epsilon, crop_a.get_size(),
                               scale_a.get_size(), playground)
           clearscreen(screen)
-          crop_a, crop_b, scale_a, scale_b = render(playground, h, screen,
-                                                    epsilon, paused,
-                                                    image_number)
+          crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
+              render(playground, h, screen, epsilon, paused, image_number)
         busy = False
       elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
         draw(screen, image_number, scale_a, scale_b, epsilon, paused)
         zoom(screen, event.pos, epsilon, scale_a, scale_b, crop_a, crop_b)
         pygame.display.update()
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
+        mosaic_click = None
         clearscreen(screen)
         draw(screen, image_number, scale_a, scale_b, epsilon, paused)
         pygame.display.update()
         busy = False
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 2:
         clearscreen(screen)
-        render_mosaic(screen, playground, event.pos,
-                      scale_a.get_size(), crop_a.get_size(), epsilon)
-        clearscreen(screen)
-        mosaic = True
+        mosaic_click = event.pos
+        if image_number != last_drawn_image_number:
+          crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
+              render(playground, h, screen, epsilon, paused, image_number)
+        render_mosaic(screen, playground, mosaic_click,
+                       scale_a.get_size(), crop_a.get_size(), epsilon)
         paused = True
         busy = False
       elif event.type == pygame.QUIT:
         pygame.quit()
         sys.exit()
+      elif mosaic_click and \
+            event.type == pygame.KEYDOWN and \
+            (event.key == pygame.K_PAGEUP or event.key == pygame.K_PAGEDOWN):
+        if event.key == pygame.K_PAGEUP:
+          image_number -= 400
+        elif event.key == pygame.K_PAGEDOWN:
+          image_number += 400
+        clip_image_number(playground)
+        if image_number != last_drawn_image_number:
+          crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
+              render(playground, h, screen, epsilon, paused, image_number)
+        render_mosaic(screen, playground, mosaic_click,
+                      scale_a.get_size(), crop_a.get_size(), epsilon)
       elif event.type == pygame.KEYDOWN:
+        mosaic_click = None
         newscreen = handle_key_event(screen, event, playground, barcode)
         if newscreen:
           screen = newscreen
@@ -471,10 +489,8 @@ def main(argv1):
           clip_image_number(playground)
         if image_number != last_drawn_image_number:
           try:
-            crop_a, crop_b, scale_a, scale_b = render(playground, h, screen,
-                                                      epsilon, paused,
-                                                      image_number)
-            last_drawn_image_number = image_number
+            crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
+                render(playground, h, screen, epsilon, paused, image_number)
             if not paused:
               beep.play()
           except pygame.error:
