@@ -307,14 +307,15 @@ def render(playground, h, screen, epsilon, paused, image_number):
   return crop_a, crop_b, scale_a, scale_b
 
 def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
-  size = (screen.get_height() // 10, screen.get_height() // 20)
+  n = 10
+  size = (screen.get_height() // n, screen.get_height() // (2 * n))
   crop_coord, is_left = scale_to_crop_coord(click, scale_size,
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
-  if is_left:
-    start = 1
-  else:
-    start = 2
+  start = max(1, image_number - 4 * n * n)  # Window before current position
+  print start
+  if not is_left:
+    start += 1
   for i in range(start, 100000, 2):
     j = i // 2 - 1
     filename = os.path.join(playground, '%06d.pnm' % i)
