@@ -255,7 +255,7 @@ def splashscreen(screen, barcode):
   clearscreen(screen)
   pygame.time.wait(2000)
 
-def handle_key_event(screen, event, playground, barcode):
+def handle_key_event(screen, event, playground, barcode, mosaic_click):
   global image_number
   global paused
   global fullscreen
@@ -294,6 +294,8 @@ def handle_key_event(screen, event, playground, barcode):
     splashscreen(screen, barcode)
     pygame.time.wait(3000)
   clip_image_number(playground)
+  if mosaic_click:
+    clearscreen(screen)
   return newscreen
 
 def render(playground, h, screen, epsilon, paused, image_number):
@@ -315,6 +317,7 @@ def mosaic_dimensions(screen):
 
 def navigate_mosaic(playground, screen, click):
   global image_number
+  clearscreen(screen)
   size, windowsize, start = mosaic_dimensions(screen)
   if click[0] > 10 * size[0]:
     return
@@ -353,7 +356,6 @@ def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     map.close()
     f.close()
     pygame.display.update(dirty)
-  clearscreen(screen)
 
 def get_beep():
   wav = """
@@ -449,7 +451,6 @@ def main(argv1):
         pygame.display.update()
         busy = False
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 2:
-        clearscreen(screen)
         mosaic_click = event.pos
         if image_number != last_drawn_image_number:
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
@@ -475,8 +476,9 @@ def main(argv1):
         render_mosaic(screen, playground, mosaic_click,
                       scale_a.get_size(), crop_a.get_size(), epsilon)
       elif event.type == pygame.KEYDOWN:
+        newscreen = handle_key_event(screen, event, playground, barcode,
+                                     mosaic_click)
         mosaic_click = None
-        newscreen = handle_key_event(screen, event, playground, barcode)
         if newscreen:
           screen = newscreen
         draw(screen, image_number, scale_a, scale_b, epsilon, paused)
