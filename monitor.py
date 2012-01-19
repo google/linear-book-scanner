@@ -306,14 +306,29 @@ def render(playground, h, screen, epsilon, paused, image_number):
   save(crop_a, crop_b, playground, image_number)
   return crop_a, crop_b, scale_a, scale_b
 
-def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
+def mosaic_dimensions(screen):
   n = 10
   size = (screen.get_height() // n, screen.get_height() // (2 * n))
+  windowsize = 4 * n * n
+  start = max(1, image_number - windowsize + 2)
+  return size, windowsize, start
+
+def navigate_mosaic(playground, screen, click):
+  global image_number
+  size, windowsize, start = mosaic_dimensions(screen)
+  if click[0] > 10 * size[0]:
+    return
+  x, y = click[0] // size[0], click[1] // size[1]
+  candidate = start + 2 * (10 * y + x)
+  filename = '%s/%06d.pnm' % (playground, candidate)
+  if os.path.exists(filename):
+    image_number = candidate
+
+def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   crop_coord, is_left = scale_to_crop_coord(click, scale_size,
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
-  windowsize = 4 * n * n
-  start = max(1, image_number - windowsize + 2)
+  size, windowsize, start = mosaic_dimensions(screen)
   if not is_left:
     start += 1
   for i in range(start, start + windowsize, 2):
@@ -338,7 +353,6 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     map.close()
     f.close()
     pygame.display.update(dirty)
-  clearscreen(screen)
 
 def get_beep():
   wav = """
@@ -381,6 +395,7 @@ def main(argv1):
   shadow = pygame.Surface(screen.get_size())
   shadow.set_alpha(128)
   shadow.fill((0, 0, 0))
+  mosaic = False  # Don't mode me in, bro!
   busy = False
   while True:
     for event in [ pygame.event.wait() ]:
@@ -388,6 +403,8 @@ def main(argv1):
         busy = True
         pygame.event.clear(pygame.USEREVENT)
       if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+        if mosaic:
+          continue
         leftdownclick = event.pos
         oldscreen = screen.copy()
         shadowscreen = screen.copy()
@@ -396,7 +413,7 @@ def main(argv1):
         prevroi = pygame.Rect(event.pos, (0, 0))
         pygame.display.update()
       elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
-        if book_dimensions:
+        if book_dimensions or mosaic:
           continue
         x = abs(event.pos[0] - w // 2)
         pos = (w // 2 - x, min(leftdownclick[1], event.pos[1]))
@@ -407,13 +424,18 @@ def main(argv1):
         screen.blit(oldscreen, roi.topleft, area = roi)
         pygame.display.update(dirty)
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
-        oldscreen = None
-        leftclick = (leftdownclick, event.pos)
-        set_book_dimensions(leftclick, epsilon, crop_a.get_size(),
-                            scale_a.get_size(), playground)
-        clearscreen(screen)
-        crop_a, crop_b, scale_a, scale_b = render(playground, h, screen,
-                                                  epsilon, paused, image_number)
+        if mosaic:
+          navigate_mosaic(playground, screen, event.pos)
+          mosaic = False
+        else:
+          oldscreen = None
+          leftclick = (leftdownclick, event.pos)
+          set_book_dimensions(leftclick, epsilon, crop_a.get_size(),
+                              scale_a.get_size(), playground)
+          clearscreen(screen)
+          crop_a, crop_b, scale_a, scale_b = render(playground, h, screen,
+                                                    epsilon, paused,
+                                                    image_number)
         busy = False
       elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
         draw(screen, image_number, scale_a, scale_b, epsilon, paused)
@@ -426,8 +448,10 @@ def main(argv1):
         busy = False
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 2:
         clearscreen(screen)
-        create_mosaic(screen, playground, event.pos,
+        render_mosaic(screen, playground, event.pos,
                       scale_a.get_size(), crop_a.get_size(), epsilon)
+        clearscreen(screen)
+        mosaic = True
         paused = True
         busy = False
       elif event.type == pygame.QUIT:
