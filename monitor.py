@@ -312,11 +312,11 @@ def create_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
   crop_coord, is_left = scale_to_crop_coord(click, scale_size,
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
-  start = max(1, image_number - 4 * n * n)  # Window before current position
-  print start
+  windowsize = 4 * n * n
+  start = max(1, image_number - windowsize)
   if not is_left:
     start += 1
-  for i in range(start, 100000, 2):
+  for i in range(start, start + windowsize, 2):
     j = i // 2 - 1
     filename = os.path.join(playground, '%06d.pnm' % i)
     if not os.path.exists(filename):
@@ -427,6 +427,7 @@ def main(argv1):
         clearscreen(screen)
         create_mosaic(screen, playground, event.pos,
                       scale_a.get_size(), crop_a.get_size(), epsilon)
+        paused = True
         busy = False
       elif event.type == pygame.QUIT:
         pygame.quit()
