@@ -332,7 +332,8 @@ def navigate_mosaic(playground, screen, click):
   if os.path.exists(filename):
     image_number = candidate
 
-def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
+def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon,
+                  image_number):
   """Useful for seeing lots of page numbers at once."""
   crop_coord, is_left = scale_to_crop_coord(click, scale_size,
                                             crop_size, epsilon)
@@ -360,6 +361,8 @@ def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon):
     dirty = pygame.Rect(dst, size)
     screen.blit(scale, dst)
     map.close()
+    if i == image_number:
+      pygame.draw.ellipse(screen, blue(), dirty, size[1] // 10)
     f.close()
     pygame.display.update(dirty)
 
@@ -462,8 +465,8 @@ def main(argv1):
         if image_number != last_drawn_image_number:
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
               render(playground, h, screen, epsilon, paused, image_number)
-        render_mosaic(screen, playground, mosaic_click,
-                       scale_a.get_size(), crop_a.get_size(), epsilon)
+        render_mosaic(screen, playground, mosaic_click, scale_a.get_size(),
+                      crop_a.get_size(), epsilon, image_number)
         paused = True
         busy = False
       elif event.type == pygame.QUIT:
@@ -481,8 +484,8 @@ def main(argv1):
         if image_number != last_drawn_image_number:
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
               render(playground, h, screen, epsilon, paused, image_number)
-        render_mosaic(screen, playground, mosaic_click,
-                      scale_a.get_size(), crop_a.get_size(), epsilon)
+        render_mosaic(screen, playground, mosaic_click, scale_a.get_size(),
+                      crop_a.get_size(), epsilon, image_number)
       elif event.type == pygame.KEYDOWN:
         newscreen = handle_key_event(screen, event, playground, barcode,
                                      mosaic_click)
