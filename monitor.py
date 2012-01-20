@@ -472,10 +472,11 @@ def main(argv1):
       elif mosaic_click and \
             event.type == pygame.KEYDOWN and \
             (event.key == pygame.K_PAGEUP or event.key == pygame.K_PAGEDOWN):
+        size, windowsize, start = mosaic_dimensions(screen)
         if event.key == pygame.K_PAGEUP:
-          image_number -= 400
+          image_number = start - 2
         elif event.key == pygame.K_PAGEDOWN:
-          image_number += 400
+          image_number = start + windowsize + windowsize - 2
         clip_image_number(playground)
         if image_number != last_drawn_image_number:
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
