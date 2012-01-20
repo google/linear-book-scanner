@@ -351,8 +351,8 @@ def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon,
     map = mmap.mmap(f.fileno(), 0)
     dimensions, headersize = read_ppm_header(f)
     image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
-    src = full_coord[0] - size[0], full_coord[1] - size[1]
-    rect = pygame.Rect(src, (size[0] * 2, size[1] * 2))
+    src = full_coord[0] - 3 * size[0] // 2, full_coord[1] - 3 * size[1] // 2
+    rect = pygame.Rect(src, (size[0] * 3, size[1] * 3))
     crop = image.subsurface(rect)
     scale = pygame.transform.smoothscale(crop, size)
     if is_left:
@@ -361,8 +361,6 @@ def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon,
     dirty = pygame.Rect(dst, size)
     screen.blit(scale, dst)
     map.close()
-    if i == image_number:
-      pygame.draw.ellipse(screen, blue(), dirty, size[1] // 10)
     f.close()
     pygame.display.update(dirty)
 
