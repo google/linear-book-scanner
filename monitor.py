@@ -31,7 +31,7 @@ book_dimensions = None   # (top, bottom, side) in pixels
 fullscreen = True        # Easier to debug in a window
 
 def blue():
-  """Original scansation blue, handed down from antiquity"""
+  """Original scansation blue, handed down from antiquity."""
   return (70, 120, 173)
 
 def clearscreen(screen):
@@ -96,9 +96,9 @@ def crop_to_full_coord(crop_coord, is_left):
     (top, bottom, side) = book_dimensions
     y += top
   if is_left:
-    y += 593
+    y += 593  # Hardware measurement
   else:
-    y += 150
+    y += 150  # Hardware measurement
   return x, y
 
 def process_image(h, filename, is_left):
@@ -125,7 +125,7 @@ def process_image(h, filename, is_left):
 def clip_image_number(playground):
   """Only show images that exist."""
   global image_number
-  if image_number < 1:
+  if image_number < 1:  # scanimage starts counting at 1
     image_number = 1
   while image_number > 1:
     filename = '%s/%06d.pnm' % (playground, image_number)
@@ -191,11 +191,11 @@ def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
 
 def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
   """Draw the page images on screen."""
-  (w, h) = screen.get_size()
+  w2 = screen.get_width() // 2
   render_text(screen, "%d           " % image_number, "upperleft")
   render_text(screen, "           %d" % (image_number + 1), "upperright")
-  screen.blit(scale_a, (w // 2 - scale_a.get_width() - epsilon, 0))
-  screen.blit(scale_b, (w // 2 + epsilon, 0))
+  screen.blit(scale_a, (w2 - scale_a.get_width() - epsilon, 0))
+  screen.blit(scale_b, (w2 + epsilon, 0))
   if paused:
     render_text(screen, "**  pause  **", "upperleft")
 
@@ -248,6 +248,7 @@ def splashscreen(screen, barcode):
                        "\n"
                        "S           = screenshot\n"
                        "F11         = fullscreen\n"
+                       "SPACE       = pause\n"
                        "Q,ESC       = quit\n"
                        ), "upperleft")
   pygame.display.update()
@@ -255,7 +256,7 @@ def splashscreen(screen, barcode):
   pygame.time.wait(2000)
 
 def handle_key_event(screen, event, playground, barcode, mosaic_click):
-  """I found it easier to deal with keystrokes (mostly) in one place."""
+  """I find it easier to deal with keystrokes mostly in one place."""
   global image_number
   global paused
   global fullscreen
@@ -310,22 +311,24 @@ def render(playground, h, screen, epsilon, paused, image_number):
   return crop_a, crop_b, scale_a, scale_b, image_number
 
 def mosaic_dimensions(screen):
-  """Reduce some cut-n-past code. Everyone still assumes 20x20 mosaic."""
-  n = 10
-  size = (screen.get_height() // n, screen.get_height() // (2 * n))
-  windowsize = 4 * n * n
+  """Reduce some cut-n-past code."""
+  columns = 10
+  rows = 20
+  h = screen.get_height() // rows
+  size = (2 * h, h)
+  windowsize = 2 * rows * columns
   start = max(1, image_number - windowsize + 2)
-  return size, windowsize, start
+  return size, windowsize, start, columns
 
 def navigate_mosaic(playground, screen, click):
   """Click on a mosaic tile, jump to that page."""
   global image_number
   clearscreen(screen)
-  size, windowsize, start = mosaic_dimensions(screen)
-  if click[0] > 10 * size[0]:
+  size, unused, start, columns = mosaic_dimensions(screen)
+  if click[0] > columns * size[0]:
     return
   x, y = click[0] // size[0], click[1] // size[1]
-  candidate = start + 2 * (10 * y + x)
+  candidate = start + 2 * (columns * y + x)
   filename = '%s/%06d.pnm' % (playground, candidate)
   if os.path.exists(filename):
     image_number = candidate
@@ -336,12 +339,12 @@ def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon,
   crop_coord, is_left = scale_to_crop_coord(click, scale_size,
                                             crop_size, epsilon)
   full_coord = crop_to_full_coord(crop_coord, is_left)
-  size, windowsize, start = mosaic_dimensions(screen)
+  size, windowsize, start, columns = mosaic_dimensions(screen)
   if not is_left:
     start += 1
   for i in range(start, start + windowsize, 2):
-    x = ((i - start) // 2) % 10
-    y = (i - start) // 20
+    x = ((i - start) // 2) % columns
+    y = ((i - start) // 2) // columns
     filename = os.path.join(playground, '%06d.pnm' % i)
     if not os.path.exists(filename):
       break
@@ -471,7 +474,7 @@ def main(argv1):
       elif mosaic_click and \
             event.type == pygame.KEYDOWN and \
             (event.key == pygame.K_PAGEUP or event.key == pygame.K_PAGEDOWN):
-        size, windowsize, start = mosaic_dimensions(screen)
+        unused, windowsize, start, unused = mosaic_dimensions(screen)
         if event.key == pygame.K_PAGEUP:
           image_number = start - 2
         elif event.key == pygame.K_PAGEDOWN:
