@@ -300,7 +300,6 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
 
 def render(playground, h, screen, epsilon, paused, image_number):
   """Render and entire screen, including book images and labels."""
-  print "XXX"
   filename_a = '%s/%06d.pnm' % (playground, image_number)
   filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
   scale_a, crop_a = process_image(h, filename_a, True)
@@ -382,7 +381,7 @@ lED/5WqsTiddtVVnV3pdej1bm3OuJKFNrH+hv61knCI8GF+PVbVXG1uUUIZp4f4=
 
 def main(argv1):
   """Display scanned images as they are created."""
-  playground_dir, barcode = os.path.split(argv1)
+  playground_dir, barcode = os.path.split(argv1.rstrip('/'))
   print playground_dir
   if not playground_dir:
     playground_dir = "/var/tmp/playground/"
