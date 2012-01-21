@@ -29,6 +29,7 @@ paused = False           # For image inspection
 image_number = 1         # Scanimage starts counting at 1
 book_dimensions = None   # (top, bottom, side) in pixels
 fullscreen = True        # Easier to debug in a window
+export = False           # Export to JPEG
 
 def blue():
   """Original scansation blue, handed down from antiquity."""
@@ -77,12 +78,11 @@ def read_ppm_header(fp):
 def scale_to_crop_coord(scale_coord, scale_size, crop_size, epsilon):
   """Scale images are displayed 2-up in the screen."""
   w2 = pygame.display.Info().current_w // 2
-  if scale_coord[0] < w2:
+  is_left = scale_coord[0] < w2
+  if is_left:
     x0 = w2 - epsilon - scale_size[0]
-    is_left = True
   else:
     x0 = w2 + epsilon
-    is_left = False
   x = (scale_coord[0] - x0) * crop_size[0] // scale_size[0]
   y = scale_coord[1] * crop_size[1] // scale_size[1]
   if is_left:
@@ -199,7 +199,7 @@ def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
   if paused:
     render_text(screen, "**  pause  **", "upperleft")
 
-def save(crop_a, crop_b, playground, image_number):
+def export_as_jpeg(crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
   global book_dimensions
   if book_dimensions is None:  # the book is not cropped
@@ -247,9 +247,11 @@ def splashscreen(screen, barcode):
                        "PgUp/PgDn   = navigation!\n"
                        "\n"
                        "S           = screenshot\n"
-                       "F11         = fullscreen\n"
-                       "SPACE       = pause\n"
                        "Q,ESC       = quit\n"
+                       "\n"
+                       "E           = export\n"
+                       "F11         = fullscreen\n"
+                       "P,SPACE     = pause\n"
                        ), "upperleft")
   pygame.display.update()
   clearscreen(screen)
@@ -260,16 +262,19 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
   global image_number
   global paused
   global fullscreen
+  global export
   newscreen = None
   if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
     pygame.quit()
     sys.exit()
-  elif event.key == pygame.K_SPACE:
+  elif event.key == pygame.K_SPACE or event.key == pygame.K_p:
     if paused:
       paused = False
       return newscreen
   paused = True
-  if event.key == pygame.K_F11:
+  if event.key == pygame.K_e:
+    export = not export
+  elif event.key == pygame.K_F11:
     (w, h) = screen.get_size()
     if fullscreen:
       window = pygame.display.set_mode((w, h))
@@ -277,6 +282,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
       window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
     fullscreen = not fullscreen
     newscreen = pygame.display.get_surface()
+    clearscreen(newscreen)
   elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
     image_number -= 2
   elif event.key == pygame.K_PAGEUP:
@@ -306,8 +312,10 @@ def render(playground, h, screen, epsilon, paused, image_number):
   scale_a, crop_a = process_image(h, filename_a, True)
   scale_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, scale_a, scale_b, epsilon, paused)
+  if export:
+    render_text(screen, "Exporting    ", "upperright")
+    export_as_jpeg(crop_a, crop_b, playground, image_number)
   pygame.display.update()
-  save(crop_a, crop_b, playground, image_number)
   return crop_a, crop_b, scale_a, scale_b, image_number
 
 def mosaic_dimensions(screen):
