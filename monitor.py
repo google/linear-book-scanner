@@ -300,6 +300,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
 
 def render(playground, h, screen, epsilon, paused, image_number):
   """Render and entire screen, including book images and labels."""
+  print "XXX"
   filename_a = '%s/%06d.pnm' % (playground, image_number)
   filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
   scale_a, crop_a = process_image(h, filename_a, True)
@@ -477,6 +478,7 @@ def main(argv1):
         elif event.key == pygame.K_PAGEDOWN:
           image_number = start + windowsize + windowsize - 2
         clip_image_number(playground)
+        clearscreen(screen)
         if image_number != last_drawn_image_number:
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
               render(playground, h, screen, epsilon, paused, image_number)
