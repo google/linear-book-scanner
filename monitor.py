@@ -36,9 +36,7 @@ def blue():
 
 def clearscreen(screen):
   """And G-d said, "Let there be blue light!"""
-  background = pygame.Surface(screen.get_size())
-  background.fill(blue())
-  screen.blit(background, (0,0))
+  screen.fill(blue())
 
 def render_text(screen, msg, position):
   """Write messages to screen, such as the image number."""
