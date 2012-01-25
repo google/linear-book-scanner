@@ -44,7 +44,7 @@ def render_text(screen, msg, position):
   pos = [0, 0]
   font = pygame.font.SysFont('Courier', 28, bold=True)
   for line in msg.split("\n"):
-    text = font.render(line, 1, (255, 255, 255))
+    text = font.render(line.rstrip('\r'), 1, (255, 255, 255))
     background = pygame.Surface(text.get_size())
     background.fill(blue())
     if position == "upperright":
@@ -514,7 +514,7 @@ def main(argv1):
                 render(playground, h, screen, epsilon, paused, image_number)
             if not paused:
               beep.play()
-          except pygame.error:
+          except IOError:
             pass
           pygame.event.clear(pygame.USEREVENT)
 
