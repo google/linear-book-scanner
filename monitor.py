@@ -472,8 +472,11 @@ def main(argv1):
         if image_number != last_drawn_image_number:
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
               render(playground, h, screen, epsilon, paused, image_number)
-        render_mosaic(screen, playground, mosaic_click, scale_a.get_size(),
-                      crop_a.get_size(), epsilon, image_number)
+        try:
+          render_mosaic(screen, playground, mosaic_click, scale_a.get_size(),
+                        crop_a.get_size(), epsilon, image_number)
+        except ValueError:
+          mosaic_click = None
         paused = True
         busy = False
       elif event.type == pygame.QUIT:
