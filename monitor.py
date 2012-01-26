@@ -268,10 +268,8 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
     pygame.quit()
     sys.exit()
   elif event.key == pygame.K_SPACE or event.key == pygame.K_p:
-    if paused:
-      paused = False
-      return newscreen
-  paused = True
+    paused = not paused
+    return newscreen
   if event.key == pygame.K_e:
     export = not export
   elif event.key == pygame.K_F11:
@@ -285,12 +283,16 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
     clearscreen(newscreen)
   elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
     image_number -= 2
+    paused = True
   elif event.key == pygame.K_PAGEUP:
     image_number -= 10
+    paused = True
   elif event.key == pygame.K_RIGHT or event.key == pygame.K_DOWN:
     image_number += 2
+    paused = True
   elif event.key == pygame.K_PAGEDOWN:
     image_number += 10
+    paused = True
   elif event.key == pygame.K_s:
     filename = "screenshot-" + barcode + "-" + str(image_number) + ".jpg"
     pygame.image.save(screen, filename);
