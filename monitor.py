@@ -198,6 +198,8 @@ def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
   screen.blit(scale_b, (w2 + epsilon, 0))
   if paused:
     render_text(screen, "**  pause  **", "upperleft")
+  if export:
+    render_text(screen, "  Exporting  ", "upperright")
 
 def export_as_jpeg(crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
@@ -269,8 +271,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
     sys.exit()
   elif event.key == pygame.K_SPACE or event.key == pygame.K_p:
     paused = not paused
-    return newscreen
-  if event.key == pygame.K_e:
+  elif event.key == pygame.K_e:
     export = not export
   elif event.key == pygame.K_F11:
     (w, h) = screen.get_size()
@@ -308,16 +309,15 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
   return newscreen
 
 def render(playground, h, screen, epsilon, paused, image_number):
-  """Render and entire screen, including book images and labels."""
+  """Calculate and draw entire screen, including book images."""
   filename_a = '%s/%06d.pnm' % (playground, image_number)
   filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
   scale_a, crop_a = process_image(h, filename_a, True)
   scale_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, scale_a, scale_b, epsilon, paused)
-  if export:
-    render_text(screen, "Exporting    ", "upperright")
-    export_as_jpeg(crop_a, crop_b, playground, image_number)
   pygame.display.update()
+  if export:
+    export_as_jpeg(crop_a, crop_b, playground, image_number)
   return crop_a, crop_b, scale_a, scale_b, image_number
 
 def mosaic_dimensions(screen):
@@ -507,6 +507,8 @@ def main(argv1):
           screen = newscreen
         draw(screen, image_number, scale_a, scale_b, epsilon, paused)
         pygame.display.update()
+        if export and event.key == pygame.K_e:
+          export_as_jpeg(crop_a, crop_b, playground, image_number)
       elif event.type == pygame.USEREVENT:
         if busy:
           continue
