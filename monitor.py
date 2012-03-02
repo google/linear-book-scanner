@@ -133,7 +133,7 @@ def clip_image_number(playground):
   if image_number < 1:  # scanimage starts counting at 1
     image_number = 1
   while image_number > 1:
-    filename = '%s/%06d.pnm' % (playground, image_number)
+    filename = os.path.join(playground, '%06d.pnm' % image_number)
     if os.path.exists(filename):
       break
     image_number -= 2
@@ -214,8 +214,9 @@ def export_as_jpeg(crop_a, crop_b, playground, image_number):
     os.mkdir(os.path.join(playground, 'export'))
   except OSError:
     pass
-  filename_a = '%s/export/%06d.jpg' % (playground, 999999 - image_number + 1)
-  filename_b = '%s/export/%06d.jpg' % (playground, 999999 - image_number)
+  renumber = 999999 - image_number  # switch to reading order
+  filename_a = os.path.join(playground, '%06d.jpg' % (renumber + 1))
+  filename_b = os.path.join(playground, '%06d.jpg' % renumber)
   a = pygame.transform.flip(crop_a, True, False)
   if image_number in suppressions:
     try:
@@ -346,8 +347,8 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
 
 def render(playground, h, screen, epsilon, paused, image_number):
   """Calculate and draw entire screen, including book images."""
-  filename_a = '%s/%06d.pnm' % (playground, image_number)
-  filename_b = '%s/%06d.pnm' % (playground, image_number + 1)
+  filename_a = os.path.join(playground, '%06d.pnm' % image_number)
+  filename_b = os.path.join(playground, '%06d.pnm' % (image_number + 1))
   scale_a, crop_a = process_image(h, filename_a, True)
   scale_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, scale_a, scale_b, epsilon, paused)
@@ -375,7 +376,7 @@ def navigate_mosaic(playground, screen, click):
     return
   x, y = click[0] // size[0], click[1] // size[1]
   candidate = start + 2 * (columns * y + x)
-  filename = '%s/%06d.pnm' % (playground, candidate)
+  filename = os.path.join(playground, '%06d.pnm' % candidate)
   if os.path.exists(filename):
     image_number = candidate
 
