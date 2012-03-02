@@ -26,10 +26,11 @@ import cStringIO
 import base64
 
 paused = False           # For image inspection
-image_number = 1         # Scanimage starts counting at 1
+image_number = None      # Scanimage starts counting at 1
 book_dimensions = None   # (top, bottom, side) in pixels
 fullscreen = True        # Easier to debug in a window
 export = False           # Export to JPEG
+suppressions = set()     # Pages we don't want to keep
 
 def blue():
   """Original scansation blue, handed down from antiquity."""
@@ -43,10 +44,14 @@ def render_text(screen, msg, position):
   """Write messages to screen, such as the image number."""
   pos = [0, 0]
   font = pygame.font.SysFont('Courier', 28, bold=True)
+  if image_number in suppressions:
+    color = pygame.Color('red')
+  else:
+    color = blue()
   for line in msg.split("\n"):
     text = font.render(line.rstrip('\r'), 1, (255, 255, 255))
     background = pygame.Surface(text.get_size())
-    background.fill(blue())
+    background.fill(color)
     if position == "upperright":
       pos[0] = screen.get_width() - text.get_width()
     screen.blit(background, pos)
@@ -198,8 +203,10 @@ def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
   screen.blit(scale_b, (w2 + epsilon, 0))
   if paused:
     render_text(screen, "**  pause  **", "upperleft")
-  if export:
-    render_text(screen, "  Exporting  ", "upperright")
+  if image_number in suppressions:
+    render_text(screen, "   delete    ", "upperright")
+  elif export:
+    render_text(screen, "  exporting  ", "upperright")
 
 def export_as_jpeg(crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
@@ -210,8 +217,15 @@ def export_as_jpeg(crop_a, crop_b, playground, image_number):
   filename_a = '%s/export/%06d.jpg' % (playground, 999999 - image_number + 1)
   filename_b = '%s/export/%06d.jpg' % (playground, 999999 - image_number)
   a = pygame.transform.flip(crop_a, True, False)
-  pygame.image.save(crop_b, filename_a)
-  pygame.image.save(a, filename_b)
+  if image_number in suppressions:
+    try:
+      os.remove(filename_a)
+      os.remove(filename_b)
+    except OSError:
+      pass
+  else:
+    pygame.image.save(crop_b, filename_a)
+    pygame.image.save(a, filename_b)
 
 def get_bibliography(barcode):
   """Hit up Google Books for bibliographic data. Thanks, Leonid."""
@@ -249,12 +263,35 @@ def splashscreen(screen, barcode):
                        "Q,ESC       = quit\n"
                        "\n"
                        "E           = export\n"
+                       "D           = delete\n"
                        "F11         = fullscreen\n"
                        "P,SPACE     = pause\n"
                        ), "upperleft")
   pygame.display.update()
   clearscreen(screen)
   pygame.time.wait(2000)
+
+def get_suppressions(playground):
+  global suppressions
+  try:
+    for line in open(os.path.join(playground, "suppressions")).readlines():
+      if line[0] != "#":
+        suppressions = set([int(x) for x in line.split(",")])
+  except IOError:
+    pass
+
+def set_suppressions(playground, image_number):
+  global suppressions
+  if image_number in suppressions:
+    suppressions.remove(image_number)
+  else:
+    suppressions.add(image_number)
+  filename = os.path.join(playground, "suppressions")
+  f = open(filename, "wb")
+  f.write("#Suppressed image pairs indicated by left image number\n")
+  f.write(str(suppressions).strip('set([])'))
+  f.write("\n");
+  f.close()
 
 def handle_key_event(screen, event, playground, barcode, mosaic_click):
   """I find it easier to deal with keystrokes mostly in one place."""
@@ -270,6 +307,8 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
     paused = not paused
   elif event.key == pygame.K_e:
     export = not export
+  elif event.key == pygame.K_d:
+    set_suppressions(playground, image_number)
   elif event.key == pygame.K_F11:
     (w, h) = screen.get_size()
     if fullscreen:
@@ -367,7 +406,16 @@ def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon,
       scale = pygame.transform.flip(scale, True, False)
     dst = (size[0] * x, size[1] * y)
     dirty = pygame.Rect(dst, size)
+    if is_left:
+      left_image_number =  i
+    else:
+      left_image_number =  i - 1
     screen.blit(scale, dst)
+    if left_image_number in suppressions:
+      red = pygame.Surface(scale.get_size())
+      red.fill(pygame.Color('red'))
+      red.set_alpha(128)
+      screen.blit(red, dst)
     map.close()
     f.close()
     pygame.display.update(dirty)
@@ -402,6 +450,7 @@ def main(argv1):
   global book_dimensions
   last_drawn_image_number = 0
   get_book_dimensions(playground)
+  get_suppressions(playground)
   beep = get_beep()
   h = pygame.display.Info().current_h
   w = pygame.display.Info().current_w
@@ -410,6 +459,7 @@ def main(argv1):
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
+  image_number = 1
   pygame.time.set_timer(pygame.USEREVENT, 50)
   shadow = pygame.Surface(screen.get_size())
   shadow.set_alpha(128)
