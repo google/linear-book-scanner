@@ -203,9 +203,6 @@ def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
 
 def export_as_jpeg(crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
-  global book_dimensions
-  if book_dimensions is None:  # the book is not cropped
-    return
   try:
     os.mkdir(os.path.join(playground, 'export'))
   except OSError:
