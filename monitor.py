@@ -459,6 +459,7 @@ def main(argv1):
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
+  scale_a = None  # prevent crash if keypress during opening splashscreen
   image_number = 1
   pygame.time.set_timer(pygame.USEREVENT, 50)
   shadow = pygame.Surface(screen.get_size())
@@ -552,8 +553,9 @@ def main(argv1):
         mosaic_click = None
         if newscreen:
           screen = newscreen
-        draw(screen, image_number, scale_a, scale_b, epsilon, paused)
-        pygame.display.update()
+        if scale_a:
+          draw(screen, image_number, scale_a, scale_b, epsilon, paused)
+          pygame.display.update()
         if export and event.key == pygame.K_e:
           export_as_jpeg(crop_a, crop_b, playground, image_number)
       elif event.type == pygame.USEREVENT:
