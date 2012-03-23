@@ -39,7 +39,6 @@ scan() {
 
 HERE=`pwd`
 get_barcode
-echo $barcode
-$HERE/monitor.py $barcode &
+$HERE/monitor.py $DIR &
 scan 
 

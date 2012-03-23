@@ -31,6 +31,8 @@ book_dimensions = None   # (top, bottom, side) in pixels
 fullscreen = True        # Easier to debug in a window
 export = False           # Export to JPEG
 suppressions = set()     # Pages we don't want to keep
+left_offset = 593        # Hardware sensor position in pixels
+right_offset = 150       # Hardware sensor position in pixels
 
 def blue():
   """Original scansation blue, handed down from antiquity."""
@@ -101,9 +103,9 @@ def crop_to_full_coord(crop_coord, is_left):
     (top, bottom, side) = book_dimensions
     y += top
   if is_left:
-    y += 593  # Hardware measurement
+    y += left_offset
   else:
-    y += 150  # Hardware measurement
+    y += right_offset
   return x, y
 
 def process_image(h, filename, is_left):
@@ -441,9 +443,6 @@ lED/5WqsTiddtVVnV3pdej1bm3OuJKFNrH+hv61knCI8GF+PVbVXG1uUUIZp4f4=
 def main(argv1):
   """Display scanned images as they are created."""
   playground_dir, barcode = os.path.split(argv1.rstrip('/'))
-  print playground_dir
-  if not playground_dir:
-    playground_dir = "/var/tmp/playground/"
   playground = os.path.join(playground_dir, barcode)
   pygame.init()
   global image_number
@@ -576,4 +575,7 @@ def main(argv1):
           pygame.event.clear(pygame.USEREVENT)
 
 if __name__ == "__main__":
-  main(sys.argv[1])
+  if len(sys.argv) == 1:
+    print("Usage: %s <imgdir>\n" % os.path.basename(sys.argv[0]))
+  else:
+    main(sys.argv[1])
