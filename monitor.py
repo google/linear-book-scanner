@@ -42,6 +42,10 @@ def clearscreen(screen):
   """And G-d said, "Let there be blue light!"""
   screen.fill(blue())
 
+def get_epsilon(screen):
+  """How much to separate page image from center of display."""
+  return screen.get_width() / 100
+
 def render_text(screen, msg, position):
   """Write messages to screen, such as the image number."""
   pos = [0, 0]
@@ -166,6 +170,7 @@ def set_book_dimensions(click, epsilon, crop_size, scale_size, playground):
     side = max(down[0], up[0]) - w2 - epsilon
     top = min(down[1], up[1])
     bottom = max(down[1], up[1])
+    side = min(side, scale_size[0])
     side = side * crop_size[0] // scale_size[0]
     top = top * crop_size[1] // scale_size[1]
     bottom = bottom * crop_size[1] // scale_size[1]
@@ -177,10 +182,10 @@ def set_book_dimensions(click, epsilon, crop_size, scale_size, playground):
     book_dimensions = None
     os.unlink(filename)
 
-def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
+def zoom(screen, click, scale_a, scale_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
   coord, is_left = scale_to_crop_coord(click, scale_a.get_size(),
-                                       crop_a.get_size(), epsilon)
+                                       crop_a.get_size(), get_epsilon(screen))
   if is_left:
     crop = crop_a
   else:
@@ -196,11 +201,12 @@ def zoom(screen, click, epsilon, scale_a, scale_b, crop_a, crop_b):
   else:
     screen.blit(crop, dst, rect)
 
-def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
+def draw(screen, image_number, scale_a, scale_b, paused):
   """Draw the page images on screen."""
   w2 = screen.get_width() // 2
   render_text(screen, "%d           " % image_number, "upperleft")
   render_text(screen, "           %d" % (image_number + 1), "upperright")
+  epsilon = get_epsilon(screen)
   screen.blit(scale_a, (w2 - scale_a.get_width() - epsilon, 0))
   screen.blit(scale_b, (w2 + epsilon, 0))
   if paused:
@@ -311,7 +317,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
   elif event.key == pygame.K_F11:
     (w, h) = screen.get_size()
     if fullscreen:
-      window = pygame.display.set_mode((w, h))
+      window = pygame.display.set_mode((w // 2, h // 2), pygame.RESIZABLE)
     else:
       window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
     fullscreen = not fullscreen
@@ -343,13 +349,14 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
     clearscreen(screen)
   return newscreen
 
-def render(playground, h, screen, epsilon, paused, image_number):
+def render(playground, screen, paused, image_number):
   """Calculate and draw entire screen, including book images."""
   filename_a = os.path.join(playground, '%06d.pnm' % image_number)
   filename_b = os.path.join(playground, '%06d.pnm' % (image_number + 1))
+  h = screen.get_height()
   scale_a, crop_a = process_image(h, filename_a, True)
   scale_b, crop_b = process_image(h, filename_b, False)
-  draw(screen, image_number, scale_a, scale_b, epsilon, paused)
+  draw(screen, image_number, scale_a, scale_b, paused)
   pygame.display.update()
   if export:
     export_as_jpeg(crop_a, crop_b, playground, image_number)
@@ -378,11 +385,11 @@ def navigate_mosaic(playground, screen, click):
   if os.path.exists(filename):
     image_number = candidate
 
-def render_mosaic(screen, playground, click, scale_size, crop_size, epsilon,
+def render_mosaic(screen, playground, click, scale_size, crop_size,
                   image_number):
   """Useful for seeing lots of page numbers at once."""
   crop_coord, is_left = scale_to_crop_coord(click, scale_size,
-                                            crop_size, epsilon)
+                                            crop_size, get_epsilon(screen))
   full_coord = crop_to_full_coord(crop_coord, is_left)
   size, windowsize, start, columns = mosaic_dimensions(screen)
   if not is_left:
@@ -450,7 +457,6 @@ def main(argv1):
   beep = get_beep()
   h = pygame.display.Info().current_h
   w = pygame.display.Info().current_w
-  epsilon = w // 100
   window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
@@ -481,8 +487,8 @@ def main(argv1):
       elif event.type == pygame.MOUSEMOTION and event.buttons[0] == 1:
         if book_dimensions or mosaic_click:
           continue
-        x = abs(event.pos[0] - w // 2)
-        pos = (w // 2 - x, min(leftdownclick[1], event.pos[1]))
+        x = abs(event.pos[0] - screen.get_width() // 2)
+        pos = (screen.get_width() // 2 - x, min(leftdownclick[1], event.pos[1]))
         roi = pygame.Rect(pos, (2 * x, abs(leftdownclick[1] - event.pos[1])))
         dirty = roi.union(prevroi)
         prevroi = roi.copy()
@@ -497,30 +503,30 @@ def main(argv1):
         else:
           oldscreen = None
           leftclick = (leftdownclick, event.pos)
-          set_book_dimensions(leftclick, epsilon, crop_a.get_size(),
+          set_book_dimensions(leftclick, get_epsilon(screen), crop_a.get_size(),
                               scale_a.get_size(), playground)
           clearscreen(screen)
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
-              render(playground, h, screen, epsilon, paused, image_number)
+              render(playground, screen, paused, image_number)
         busy = False
       elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
-        draw(screen, image_number, scale_a, scale_b, epsilon, paused)
-        zoom(screen, event.pos, epsilon, scale_a, scale_b, crop_a, crop_b)
+        draw(screen, image_number, scale_a, scale_b, paused)
+        zoom(screen, event.pos, scale_a, scale_b, crop_a, crop_b)
         pygame.display.update()
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 3:
         mosaic_click = None
         clearscreen(screen)
-        draw(screen, image_number, scale_a, scale_b, epsilon, paused)
+        draw(screen, image_number, scale_a, scale_b, paused)
         pygame.display.update()
         busy = False
       elif event.type == pygame.MOUSEBUTTONUP and event.button == 2:
         mosaic_click = event.pos
         if image_number != last_drawn_image_number:
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
-              render(playground, h, screen, epsilon, paused, image_number)
+              render(playground, screen, paused, image_number)
         try:
           render_mosaic(screen, playground, mosaic_click, scale_a.get_size(),
-                        crop_a.get_size(), epsilon, image_number)
+                        crop_a.get_size(), image_number)
         except ValueError:
           mosaic_click = None
         paused = True
@@ -540,20 +546,23 @@ def main(argv1):
         clearscreen(screen)
         if image_number != last_drawn_image_number:
           crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
-              render(playground, h, screen, epsilon, paused, image_number)
+              render(playground, screen, paused, image_number)
         render_mosaic(screen, playground, mosaic_click, scale_a.get_size(),
-                      crop_a.get_size(), epsilon, image_number)
+                      crop_a.get_size(), image_number)
       elif event.type == pygame.KEYDOWN:
         newscreen = handle_key_event(screen, event, playground, barcode,
                                      mosaic_click)
         mosaic_click = None
         if newscreen:
           screen = newscreen
-        if scale_a:
-          draw(screen, image_number, scale_a, scale_b, epsilon, paused)
-          pygame.display.update()
+          clearscreen(screen)
+          last_drawn_image_number = None
         if export and event.key == pygame.K_e:
           export_as_jpeg(crop_a, crop_b, playground, image_number)
+      elif event.type == pygame.VIDEORESIZE:
+        screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
+        clearscreen(screen)
+        last_drawn_image_number = None
       elif event.type == pygame.USEREVENT:
         if busy:
           continue
@@ -563,7 +572,7 @@ def main(argv1):
         if image_number != last_drawn_image_number:
           try:
             crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
-                render(playground, h, screen, epsilon, paused, image_number)
+                render(playground, screen, paused, image_number)
             if not paused:
               beep.play()
           except IOError:
