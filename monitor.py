@@ -212,10 +212,6 @@ def draw(screen, image_number, scale_a, scale_b, epsilon, paused):
 
 def export_as_jpeg(crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
-  try:
-    os.mkdir(os.path.join(playground, 'export'))
-  except OSError:
-    pass
   renumber = 999999 - image_number  # switch to reading order
   filename_a = os.path.join(playground, '%06d.jpg' % (renumber + 1))
   filename_b = os.path.join(playground, '%06d.jpg' % renumber)
