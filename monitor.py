@@ -269,7 +269,7 @@ def splashscreen(screen, barcode):
                        "\n"
                        "E           = export\n"
                        "D           = delete\n"
-                       "F11         = fullscreen\n"
+                       "F11,F       = fullscreen\n"
                        "P,SPACE     = pause\n"
                        ), "upperleft")
   pygame.display.update()
@@ -315,7 +315,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
     export = not export
   elif event.key == pygame.K_d:
     set_suppressions(playground, image_number)
-  elif event.key == pygame.K_F11:
+  elif event.key == pygame.K_F11 or event.key == pygame.K_f:
     if fullscreen:
       window = pygame.display.set_mode((fullsize[0] // 2, 
                                         fullsize[1] // 2), pygame.RESIZABLE)
