@@ -298,7 +298,8 @@ def set_suppressions(playground, image_number):
   f.write("\n");
   f.close()
 
-def handle_key_event(screen, event, playground, barcode, mosaic_click):
+def handle_key_event(screen, event, playground, barcode, mosaic_click,
+                     fullsize):
   """I find it easier to deal with keystrokes mostly in one place."""
   global image_number
   global paused
@@ -315,11 +316,11 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click):
   elif event.key == pygame.K_d:
     set_suppressions(playground, image_number)
   elif event.key == pygame.K_F11:
-    (w, h) = screen.get_size()
     if fullscreen:
-      window = pygame.display.set_mode((w // 2, h // 2), pygame.RESIZABLE)
+      window = pygame.display.set_mode((fullsize[0] // 2, 
+                                        fullsize[1] // 2), pygame.RESIZABLE)
     else:
-      window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
+      window = pygame.display.set_mode(fullsize, pygame.FULLSCREEN)
     fullscreen = not fullscreen
     newscreen = pygame.display.get_surface()
     clearscreen(newscreen)
@@ -455,9 +456,8 @@ def main(argv1):
   get_book_dimensions(playground)
   get_suppressions(playground)
   beep = get_beep()
-  h = pygame.display.Info().current_h
-  w = pygame.display.Info().current_w
-  window = pygame.display.set_mode((w, h), pygame.FULLSCREEN)
+  fullsize = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+  window = pygame.display.set_mode(fullsize, pygame.FULLSCREEN)
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
@@ -551,12 +551,12 @@ def main(argv1):
                       crop_a.get_size(), image_number)
       elif event.type == pygame.KEYDOWN:
         newscreen = handle_key_event(screen, event, playground, barcode,
-                                     mosaic_click)
+                                     mosaic_click, fullsize)
         mosaic_click = None
+        last_drawn_image_number = None
         if newscreen:
           screen = newscreen
           clearscreen(screen)
-          last_drawn_image_number = None
         if export and event.key == pygame.K_e:
           export_as_jpeg(crop_a, crop_b, playground, image_number)
       elif event.type == pygame.VIDEORESIZE:
