@@ -29,10 +29,10 @@ paused = False           # For image inspection
 image_number = None      # Scanimage starts counting at 1
 book_dimensions = None   # (top, bottom, side) in pixels
 fullscreen = True        # Easier to debug in a window
-export = False           # Export to JPEG
 suppressions = set()     # Pages we don't want to keep
 left_offset = 593        # Hardware sensor position in pixels
 right_offset = 150       # Hardware sensor position in pixels
+dpi = 300                # Hardware resolution
 
 def blue():
   """Original scansation blue, handed down from antiquity."""
@@ -213,24 +213,44 @@ def draw(screen, image_number, scale_a, scale_b, paused):
     render_text(screen, "**  pause  **", "upperleft")
   if image_number in suppressions:
     render_text(screen, "   delete    ", "upperright")
-  elif export:
-    render_text(screen, "  exporting  ", "upperright")
 
-def export_as_jpeg(crop_a, crop_b, playground, image_number):
+def export_pdf(playground, screen):
+  """Create a PDF file fit for human consumption"""
+  from reportlab.pdfgen.canvas import Canvas
+  filename = os.path.join(playground, "book.pdf")
+  width = book_dimensions[2] * 72 / dpi
+  height = (book_dimensions[1] - book_dimensions[0]) * 72 / dpi
+  pdf = Canvas(filename, pagesize=(width, height), pageCompression=1)
+  pdf.setCreator('cheesegrater')
+  jpegs = glob.glob(os.path.join(playground, '*.jpg'))
+  for jpeg in jpegs:
+    render_text(screen, "Exporting %s" % os.path.basename(jpeg), "upperleft")
+    pygame.display.update()
+    pdf.drawImage(jpeg, 0, 0, width=width, height=height)
+    pdf.showPage()
+  pdf.save()
+
+def save_jpeg(crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
   renumber = 999999 - image_number  # switch to reading order
-  filename_a = os.path.join(playground, '%06d.jpg' % (renumber + 1))
-  filename_b = os.path.join(playground, '%06d.jpg' % renumber)
   a = pygame.transform.flip(crop_a, True, False)
-  if image_number in suppressions:
-    try:
-      os.remove(filename_a)
-      os.remove(filename_b)
-    except OSError:
-      pass
+  write_jpeg_as_needed(playground, crop_b, image_number, renumber + 1)
+  write_jpeg_as_needed(playground, a, image_number, renumber)
+
+def write_jpeg_as_needed(playground, img, image_number, renumber):
+  """Write JPEG image if not already there, plus remove any old cruft"""
+  if book_dimensions:
+    d = book_dimensions
+    base = "%06d-%s-%s-%s.jpg" % (renumber, d[0], d[1], d[2])
   else:
-    pygame.image.save(crop_b, filename_a)
-    pygame.image.save(a, filename_b)
+    base = "%06d-uncropped.jpg" % renumber
+  filename = os.path.join(playground, base)
+  jpegs = glob.glob(os.path.join(playground, '%06d-*.jpg' % renumber))
+  for jpeg in jpegs:
+    if jpeg != filename or image_number in suppressions:
+      os.remove(jpeg)
+  if not os.path.exists(filename):
+    pygame.image.save(img, filename)
 
 def get_bibliography(barcode):
   """Hit up Google Books for bibliographic data. Thanks, Leonid."""
@@ -267,7 +287,7 @@ def splashscreen(screen, barcode):
                        "S           = screenshot\n"
                        "Q,ESC       = quit\n"
                        "\n"
-                       "E           = export\n"
+                       "E           = export to pdf\n"
                        "D           = delete\n"
                        "F11,F       = fullscreen\n"
                        "P,SPACE     = pause\n"
@@ -304,7 +324,6 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
   global image_number
   global paused
   global fullscreen
-  global export
   newscreen = None
   if event.key == pygame.K_ESCAPE or event.key == pygame.K_q:
     pygame.quit()
@@ -312,7 +331,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
   elif event.key == pygame.K_SPACE or event.key == pygame.K_p:
     paused = not paused
   elif event.key == pygame.K_e:
-    export = not export
+    export_pdf(playground, screen)
   elif event.key == pygame.K_d:
     set_suppressions(playground, image_number)
   elif event.key == pygame.K_F11 or event.key == pygame.K_f:
@@ -359,8 +378,7 @@ def render(playground, screen, paused, image_number):
   scale_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, scale_a, scale_b, paused)
   pygame.display.update()
-  if export:
-    export_as_jpeg(crop_a, crop_b, playground, image_number)
+  save_jpeg(crop_a, crop_b, playground, image_number)
   return crop_a, crop_b, scale_a, scale_b, image_number
 
 def mosaic_dimensions(screen):
@@ -557,8 +575,6 @@ def main(argv1):
         if newscreen:
           screen = newscreen
           clearscreen(screen)
-        if export and event.key == pygame.K_e:
-          export_as_jpeg(crop_a, crop_b, playground, image_number)
       elif event.type == pygame.VIDEORESIZE:
         screen = pygame.display.set_mode(event.size, pygame.RESIZABLE)
         clearscreen(screen)

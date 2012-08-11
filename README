@@ -1,7 +1,7 @@
 This software supports the featherweight scanstation. It has been
 tested on MacOS and Ubuntu 12.04. Instructions for Ubuntu follow,
-including a viewer self test that does not require hardware.
+including a self test that does not require hardware.
 
-$ sudo apt-get install python-pygame
+$ sudo apt-get install python-pygame python-reportlab
 
 $ ./monitor.py testdata
