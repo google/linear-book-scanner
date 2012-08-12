@@ -55,13 +55,15 @@ def render_text(screen, msg, position):
   else:
     color = blue()
   for line in msg.split("\n"):
-    text = font.render(line.rstrip('\r'), 1, (255, 255, 255))
-    background = pygame.Surface(text.get_size())
-    background.fill(color)
-    if position == "upperright":
-      pos[0] = screen.get_width() - text.get_width()
-    screen.blit(background, pos)
-    screen.blit(text, pos)
+    if len(line) > 0:
+      text = font.render(line.rstrip('\r'), 1, (255, 255, 255))
+      background = pygame.Surface(text.get_size())
+      background.fill(color)
+      if position == "upperright":
+        pos[0] = screen.get_width() - text.get_width()
+      screen.blit(background, pos)
+      screen.blit(text, pos)
+      pygame.display.update(pygame.Rect(pos, text.get_size()))
     pos[1] += 30
 
 def read_ppm_header(fp):
@@ -204,8 +206,8 @@ def zoom(screen, click, scale_a, scale_b, crop_a, crop_b):
 def draw(screen, image_number, scale_a, scale_b, paused):
   """Draw the page images on screen."""
   w2 = screen.get_width() // 2
-  render_text(screen, "%d           " % image_number, "upperleft")
-  render_text(screen, "           %d" % (image_number + 1), "upperright")
+  render_text(screen, "%s" % str(image_number).ljust(4), "upperleft")
+  render_text(screen, "%s" % str(image_number + 1).rjust(4), "upperright")
   epsilon = get_epsilon(screen)
   screen.blit(scale_a, (w2 - scale_a.get_width() - epsilon, 0))
   screen.blit(scale_b, (w2 + epsilon, 0))
@@ -232,13 +234,14 @@ def export_pdf(playground, screen):
   counter = 0
   max = len(jpegs) - 1
   for jpeg in jpegs:
-    render_text(screen, "Exporting PDF %d/%d" % (counter, max), "upperleft")
+    msg = "Exporting PDF %d/%d" % (counter, max)
+    render_text(screen, msg, "upperright")
     counter += 1
-    pygame.display.update()
     pdf.drawImage(jpeg, 0, 0, width=width, height=height)
     add_text_layer(pdf, jpeg, height)
     pdf.showPage()
   pdf.save()
+  render_text(screen, " " * len(msg), "upperright")  
 
 def add_text_layer(pdf, jpeg, height):
   # inspired by https://github.com/jbrinley/HocrConverter/blob/master/HocrConverter.py
@@ -326,7 +329,6 @@ def write_jpeg_as_needed(screen, playground, img, image_number, renumber):
       render_text(screen, "\n\n\nOCR",  "upperleft")
     else:
       render_text(screen, "\n\n\nOCR",  "upperright")
-    pygame.display.update()
     return p
     
 def get_bibliography(barcode):
@@ -352,9 +354,9 @@ def splashscreen(screen, barcode):
   clearscreen(screen)
   render_text(screen, "Looking up barcode: %s" % barcode.split("_")[0],
               "upperleft")
-  pygame.display.update()
   clearscreen(screen)
   render_text(screen, get_bibliography(barcode), "upperleft")
+  pygame.display.update()
   render_text(screen, ("\n\n\n\n\n\n\n\n\n\n"
                        "H,?         = help\n"
                        "MOUSE       = crop | mosaic | zoom\n"
@@ -369,7 +371,6 @@ def splashscreen(screen, barcode):
                        "F11,F       = fullscreen\n"
                        "P,SPACE     = pause\n"
                        ), "upperleft")
-  pygame.display.update()
   clearscreen(screen)
   pygame.time.wait(2000)
 
@@ -436,8 +437,8 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
     filename = "screenshot-" + barcode + "-" + str(image_number) + ".jpg"
     pygame.image.save(screen, filename);
     render_text(screen, filename, "upperright")
-    pygame.display.update()
     pygame.time.wait(2000)
+    render_text(screen, " " * len(filename), "upperright")
   elif event.key == pygame.K_h or event.key == pygame.K_QUESTION:
     splashscreen(screen, barcode)
     pygame.time.wait(3000)
@@ -665,11 +666,9 @@ def main(argv1):
         if p1 and p1.poll() != None:
           p1 = None
           render_text(screen, "\n\n\n   ", "upperleft")
-          pygame.display.update()
         if p2 and p2.poll() != None:
           p2 = None
           render_text(screen, "\n\n\n   ", "upperright")
-          pygame.display.update()
         if not (paused or p1 or p2):
           image_number += 2
           clip_image_number(playground)
