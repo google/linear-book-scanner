@@ -218,40 +218,113 @@ def export_pdf(playground, screen):
   """Create a PDF file fit for human consumption"""
   from reportlab.pdfgen.canvas import Canvas
   filename = os.path.join(playground, "book.pdf")
+  if book_dimensions == None:
+    return
   width = book_dimensions[2] * 72 / dpi
   height = (book_dimensions[1] - book_dimensions[0]) * 72 / dpi
   pdf = Canvas(filename, pagesize=(width, height), pageCompression=1)
   pdf.setCreator('cheesegrater')
   jpegs = glob.glob(os.path.join(playground, '*.jpg'))
+  counter = 0
+  max = len(jpegs) - 1
   for jpeg in jpegs:
-    render_text(screen, "Exporting %s" % os.path.basename(jpeg), "upperleft")
+    render_text(screen, "Exporting PDF %d/%d" % (counter, max), "upperleft")
+    counter += 1
     pygame.display.update()
     pdf.drawImage(jpeg, 0, 0, width=width, height=height)
+    add_text_layer(pdf, jpeg, height)
     pdf.showPage()
   pdf.save()
 
-def save_jpeg(crop_a, crop_b, playground, image_number):
+def add_text_layer(pdf, jpeg, height):
+  # inspired by https://github.com/jbrinley/HocrConverter/blob/master/HocrConverter.py
+  fontname = 'Courier'
+  fontsize = 8
+  hocrfile = os.path.splitext(jpeg)[0] + ".html"
+  from xml.etree.ElementTree import ElementTree, ParseError
+  hocr = ElementTree()
+  try:
+    hocr.parse(hocrfile)
+  except ParseError:
+    print("Parse error for %s" % hocrfile)
+    return
+  except IOError:
+    return # tesseract not installed
+  for line in hocr.findall(".//%sspan"%('')):
+    if line.attrib['class'] != 'ocr_line':
+      continue
+    for word in line:
+      if word.attrib['class'] != 'ocr_word':
+        continue    
+      if word.text == None or len(word.text.rstrip()) == 0:
+        continue
+      coords = element_coordinates(word)
+      text = pdf.beginText()
+      text.setFont(fontname, fontsize)
+      text.setTextRenderMode(3) # invisible
+      baseline = element_coordinates(line)[3]
+      origin = (coords[0] * 72 / dpi, height - baseline * 72 / dpi)
+      bbox_width = (coords[2] - coords[0]) * 72 / dpi
+      hscale = (bbox_width / pdf.stringWidth(word.text.rstrip(), fontname, fontsize)) * 100
+      text.setTextOrigin(origin[0], origin[1])
+      text.setHorizScale(hscale)
+      text.textLine(word.text.rstrip())
+      pdf.drawText(text)
+
+def element_coordinates(element):
+  """
+  Returns a tuple containing the coordinates of the bounding box around
+  an element
+  """
+  # from https://github.com/jbrinley/HocrConverter/blob/master/HocrConverter.py
+  import re
+  out = (0,0,0,0)
+  boxPattern = re.compile('bbox((\s+\d+){4})')
+  if 'title' in element.attrib:
+    matches = boxPattern.search(element.attrib['title'])
+    if matches:
+      coords = matches.group(1).split()
+      out = (int(coords[0]), int(coords[1]), int(coords[2]), int(coords[3]))
+  return out
+            
+def save_jpeg(screen, crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
   renumber = 999999 - image_number  # switch to reading order
   a = pygame.transform.flip(crop_a, True, False)
-  write_jpeg_as_needed(playground, crop_b, image_number, renumber + 1)
-  write_jpeg_as_needed(playground, a, image_number, renumber)
-
-def write_jpeg_as_needed(playground, img, image_number, renumber):
+  p1 = write_jpeg_as_needed(screen, playground, a, image_number, renumber)
+  p2 = write_jpeg_as_needed(screen, playground, crop_b, image_number, renumber + 1)
+  return (p1, p2)
+  
+def write_jpeg_as_needed(screen, playground, img, image_number, renumber):
   """Write JPEG image if not already there, plus remove any old cruft"""
   if book_dimensions:
     d = book_dimensions
-    base = "%06d-%s-%s-%s.jpg" % (renumber, d[0], d[1], d[2])
+    stem = "%06d-%s-%s-%s" % (renumber, d[0], d[1], d[2])
   else:
-    base = "%06d-uncropped.jpg" % renumber
-  filename = os.path.join(playground, base)
+    stem = "%06d-uncropped" % renumber
+  stem = os.path.join(playground, stem) 
+  hocrs = glob.glob(os.path.join(playground, '%06d-*.html' % renumber))
   jpegs = glob.glob(os.path.join(playground, '%06d-*.jpg' % renumber))
-  for jpeg in jpegs:
-    if jpeg != filename or image_number in suppressions:
-      os.remove(jpeg)
-  if not os.path.exists(filename):
-    pygame.image.save(img, filename)
-
+  for file in hocrs + jpegs:
+    if os.path.splitext(file)[0] != stem:
+      os.remove(file)
+  jpeg = os.path.join(playground, stem + ".jpg")
+  hocr = os.path.join(playground, stem + ".html")
+  if not os.path.exists(jpeg):
+    pygame.image.save(img, jpeg)
+  if  not os.path.exists(hocr): 
+    import subprocess
+    try:
+      p = subprocess.Popen(['tesseract', jpeg, os.path.splitext(jpeg)[0], 'hocr'])
+    except OSError:
+      return  # Tesseract not installed 
+    if renumber % 2 == 0:
+      render_text(screen, "\nOCR",  "upperleft")
+    else:
+      render_text(screen, "\nOCR",  "upperright")
+    pygame.display.update()
+    return p
+    
 def get_bibliography(barcode):
   """Hit up Google Books for bibliographic data. Thanks, Leonid."""
   if barcode[0:3] == "978":
@@ -378,7 +451,6 @@ def render(playground, screen, paused, image_number):
   scale_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, scale_a, scale_b, paused)
   pygame.display.update()
-  save_jpeg(crop_a, crop_b, playground, image_number)
   return crop_a, crop_b, scale_a, scale_b, image_number
 
 def mosaic_dimensions(screen):
@@ -473,7 +545,10 @@ def main(argv1):
   last_drawn_image_number = 0
   get_book_dimensions(playground)
   get_suppressions(playground)
-  beep = get_beep()
+  try: 
+    beep = get_beep()
+  except:
+    pass
   fullsize = (pygame.display.Info().current_w, pygame.display.Info().current_h)
   window = pygame.display.set_mode(fullsize, pygame.FULLSCREEN)
   screen = pygame.display.get_surface()
@@ -486,6 +561,7 @@ def main(argv1):
   shadow.set_alpha(128)
   shadow.fill((0, 0, 0))
   mosaic_click = None  # Don't mode me in, bro!
+  p1, p2 = None, None
   busy = False
   while True:
     for event in [ pygame.event.wait() ]:
@@ -582,15 +658,19 @@ def main(argv1):
       elif event.type == pygame.USEREVENT:
         if busy:
           continue
-        if not paused:
+        if not (paused or (p1 and p1.poll() is None) or (p2 and p2.poll() is None)):
           image_number += 2
           clip_image_number(playground)
         if image_number != last_drawn_image_number:
           try:
             crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
                 render(playground, screen, paused, image_number)
+            (p1, p2) = save_jpeg(screen, crop_a, crop_b, playground, image_number)             
             if not paused:
-              beep.play()
+              try:
+                beep.play()
+              except:
+                pass
           except IOError:
             pass
           pygame.event.clear(pygame.USEREVENT)
