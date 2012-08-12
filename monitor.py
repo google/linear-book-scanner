@@ -210,10 +210,14 @@ def draw(screen, image_number, scale_a, scale_b, paused):
   screen.blit(scale_a, (w2 - scale_a.get_width() - epsilon, 0))
   screen.blit(scale_b, (w2 + epsilon, 0))
   if paused:
-    render_text(screen, "**  pause  **", "upperleft")
+    render_text(screen, "\nPAU", "upperleft")
+  else:
+    render_text(screen, "\n   ", "upperleft")
   if image_number in suppressions:
-    render_text(screen, "   delete    ", "upperright")
-
+    render_text(screen, "\n\nDEL", "upperleft")
+  else:
+    render_text(screen, "\n\n   ", "upperleft")
+      
 def export_pdf(playground, screen):
   """Create a PDF file fit for human consumption"""
   from reportlab.pdfgen.canvas import Canvas
@@ -319,9 +323,9 @@ def write_jpeg_as_needed(screen, playground, img, image_number, renumber):
     except OSError:
       return  # Tesseract not installed 
     if renumber % 2 == 0:
-      render_text(screen, "\nOCR",  "upperleft")
+      render_text(screen, "\n\n\nOCR",  "upperleft")
     else:
-      render_text(screen, "\nOCR",  "upperright")
+      render_text(screen, "\n\n\nOCR",  "upperright")
     pygame.display.update()
     return p
     
@@ -658,7 +662,15 @@ def main(argv1):
       elif event.type == pygame.USEREVENT:
         if busy:
           continue
-        if not (paused or (p1 and p1.poll() is None) or (p2 and p2.poll() is None)):
+        if p1 and p1.poll() != None:
+          p1 = None
+          render_text(screen, "\n\n\n   ", "upperleft")
+          pygame.display.update()
+        if p2 and p2.poll() != None:
+          p2 = None
+          render_text(screen, "\n\n\n   ", "upperright")
+          pygame.display.update()
+        if not (paused or p1 or p2):
           image_number += 2
           clip_image_number(playground)
         if image_number != last_drawn_image_number:
