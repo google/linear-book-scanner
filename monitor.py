@@ -24,6 +24,8 @@ import BaseHTTPServer
 import mmap
 import cStringIO
 import base64
+import subprocess
+import re
 
 paused = False           # For image inspection
 image_number = None      # Scanimage starts counting at 1
@@ -65,6 +67,7 @@ def render_text(screen, msg, position):
       screen.blit(text, pos)
       pygame.display.update(pygame.Rect(pos, text.get_size()))
     pos[1] += 30
+    color = blue()
 
 def read_ppm_header(fp):
   """Read dimensions and headersize from a PPM file."""
@@ -209,16 +212,11 @@ def draw(screen, image_number, scale_a, scale_b, paused):
   render_text(screen, "%s" % str(image_number).ljust(4), "upperleft")
   render_text(screen, "%s" % str(image_number + 1).rjust(4), "upperright")
   epsilon = get_epsilon(screen)
+  render_text(screen, "\n     ", "upperleft")
   screen.blit(scale_a, (w2 - scale_a.get_width() - epsilon, 0))
   screen.blit(scale_b, (w2 + epsilon, 0))
   if paused:
-    render_text(screen, "\nPAU", "upperleft")
-  else:
-    render_text(screen, "\n   ", "upperleft")
-  if image_number in suppressions:
-    render_text(screen, "\n\nDEL", "upperleft")
-  else:
-    render_text(screen, "\n\n   ", "upperleft")
+    render_text(screen, "\nPAUSE", "upperleft")
       
 def export_pdf(playground, screen):
   """Create a PDF file fit for human consumption"""
@@ -244,19 +242,20 @@ def export_pdf(playground, screen):
   render_text(screen, " " * len(msg), "upperright")  
 
 def add_text_layer(pdf, jpeg, height):
-  # inspired by https://github.com/jbrinley/HocrConverter/blob/master/HocrConverter.py
+  """Draw an invisible text layer for OCR data"""
+  from xml.etree.ElementTree import ElementTree, ParseError
+  pattern = re.compile('bbox((\s+\d+){4})')      
   fontname = 'Courier'
   fontsize = 8
   hocrfile = os.path.splitext(jpeg)[0] + ".html"
-  from xml.etree.ElementTree import ElementTree, ParseError
   hocr = ElementTree()
   try:
     hocr.parse(hocrfile)
   except ParseError:
-    print("Parse error for %s" % hocrfile)
+    print("Parse error for %s" % hocrfile)  # Tesseract bug fixed Aug 16, 2012
     return
   except IOError:
-    return # tesseract not installed
+    return  # tesseract not installed
   for line in hocr.findall(".//%sspan"%('')):
     if line.attrib['class'] != 'ocr_line':
       continue
@@ -265,26 +264,20 @@ def add_text_layer(pdf, jpeg, height):
         continue    
       if word.text == None or len(word.text.rstrip()) == 0:
         continue
-      coords = element_coordinates(word)
+      baseline = int(pattern.seach(line.attrib['title']).group(1).split()[3])
+      left = int(pattern.seach(word.attrib['title']).group(1).split()[0])
+      right = int(pattern.seach(word.attrib['title']).group(1).split()[2])      
       text = pdf.beginText()
+      text.setTextRenderMode(3)  # invisible
       text.setFont(fontname, fontsize)
-      text.setTextRenderMode(3) # invisible
-      baseline = element_coordinates(line)[3]
-      origin = (coords[0] * 72 / dpi, height - baseline * 72 / dpi)
-      bbox_width = (coords[2] - coords[0]) * 72 / dpi
-      hscale = (bbox_width / pdf.stringWidth(word.text.rstrip(), fontname, fontsize)) * 100
-      text.setTextOrigin(origin[0], origin[1])
+      width = (right - left) * 72 / dpi
+      hscale = (width / pdf.stringWidth(word.text.rstrip(), fontname, fontsize)) * 100
+      text.setTextOrigin(baseline * 72 / dpi, height - baseline * 72 / dpi)
       text.setHorizScale(hscale)
       text.textLine(word.text.rstrip())
       pdf.drawText(text)
 
 def element_coordinates(element):
-  """
-  Returns a tuple containing the coordinates of the bounding box around
-  an element
-  """
-  # from https://github.com/jbrinley/HocrConverter/blob/master/HocrConverter.py
-  import re
   out = (0,0,0,0)
   boxPattern = re.compile('bbox((\s+\d+){4})')
   if 'title' in element.attrib:
@@ -309,27 +302,29 @@ def write_jpeg_as_needed(screen, playground, img, image_number, renumber):
     stem = "%06d-%s-%s-%s" % (renumber, d[0], d[1], d[2])
   else:
     stem = "%06d-uncropped" % renumber
-  stem = os.path.join(playground, stem) 
   hocrs = glob.glob(os.path.join(playground, '%06d-*.html' % renumber))
   jpegs = glob.glob(os.path.join(playground, '%06d-*.jpg' % renumber))
   for file in hocrs + jpegs:
-    if os.path.splitext(file)[0] != stem:
+    if os.path.splitext(os.path.basename(file))[0] != stem:
       os.remove(file)
   jpeg = os.path.join(playground, stem + ".jpg")
   hocr = os.path.join(playground, stem + ".html")
   if not os.path.exists(jpeg):
     pygame.image.save(img, jpeg)
-  if  not os.path.exists(hocr): 
-    import subprocess
+  p = None
+  if os.path.exists(hocr):
+    msg = "\n\n\n   "
+  else:
+    msg = "\n\n\nOCR" 
     try:
       p = subprocess.Popen(['tesseract', jpeg, os.path.splitext(jpeg)[0], 'hocr'])
     except OSError:
-      return  # Tesseract not installed 
-    if renumber % 2 == 0:
-      render_text(screen, "\n\n\nOCR",  "upperleft")
-    else:
-      render_text(screen, "\n\n\nOCR",  "upperright")
-    return p
+      pass  # Tesseract not installed 
+  if renumber % 2 == 0:
+    render_text(screen, msg,  "upperleft")
+  else:
+    render_text(screen, msg,  "upperright")
+  return p
     
 def get_bibliography(barcode):
   """Hit up Google Books for bibliographic data. Thanks, Leonid."""
@@ -367,7 +362,7 @@ def splashscreen(screen, barcode):
                        "Q,ESC       = quit\n"
                        "\n"
                        "E           = export to pdf\n"
-                       "D           = delete\n"
+                       "DELETE      = delete\n"
                        "F11,F       = fullscreen\n"
                        "P,SPACE     = pause\n"
                        ), "upperleft")
@@ -410,7 +405,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
     paused = not paused
   elif event.key == pygame.K_e:
     export_pdf(playground, screen)
-  elif event.key == pygame.K_d:
+  elif event.key == pygame.K_DELETE:
     set_suppressions(playground, image_number)
   elif event.key == pygame.K_F11 or event.key == pygame.K_f:
     if fullscreen:
@@ -541,8 +536,8 @@ lED/5WqsTiddtVVnV3pdej1bm3OuJKFNrH+hv61knCI8GF+PVbVXG1uUUIZp4f4=
 
 def main(argv1):
   """Display scanned images as they are created."""
-  playground_dir, barcode = os.path.split(argv1.rstrip('/'))
-  playground = os.path.join(playground_dir, barcode)
+  playground = argv1.rstrip('/')
+  barcode = os.path.basename(playground)
   pygame.init()
   global image_number
   global paused
@@ -555,7 +550,11 @@ def main(argv1):
   except:
     pass
   fullsize = (pygame.display.Info().current_w, pygame.display.Info().current_h)
-  window = pygame.display.set_mode(fullsize, pygame.FULLSCREEN)
+  if fullscreen:
+    window = pygame.display.set_mode(fullsize, pygame.FULLSCREEN)
+  else:
+    window = pygame.display.set_mode((fullsize[0] // 2, 
+                                      fullsize[1] // 2), pygame.RESIZABLE)
   screen = pygame.display.get_surface()
   pygame.display.set_caption("Barcode: %s" % barcode)
   splashscreen(screen, barcode)
