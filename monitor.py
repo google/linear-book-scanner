@@ -259,20 +259,20 @@ def add_text_layer(pdf, jpeg, height):
   for line in hocr.findall(".//%sspan"%('')):
     if line.attrib['class'] != 'ocr_line':
       continue
+    baseline = int(pattern.search(line.attrib['title']).group(1).split()[3])
     for word in line:
       if word.attrib['class'] != 'ocr_word':
         continue    
       if word.text == None or len(word.text.rstrip()) == 0:
         continue
-      baseline = int(pattern.seach(line.attrib['title']).group(1).split()[3])
-      left = int(pattern.seach(word.attrib['title']).group(1).split()[0])
-      right = int(pattern.seach(word.attrib['title']).group(1).split()[2])      
+      left = int(pattern.search(word.attrib['title']).group(1).split()[0])
+      right = int(pattern.search(word.attrib['title']).group(1).split()[2])      
       text = pdf.beginText()
       text.setTextRenderMode(3)  # invisible
       text.setFont(fontname, fontsize)
       width = (right - left) * 72 / dpi
       hscale = (width / pdf.stringWidth(word.text.rstrip(), fontname, fontsize)) * 100
-      text.setTextOrigin(baseline * 72 / dpi, height - baseline * 72 / dpi)
+      text.setTextOrigin(left * 72 / dpi, height - baseline * 72 / dpi)
       text.setHorizScale(hscale)
       text.textLine(word.text.rstrip())
       pdf.drawText(text)
