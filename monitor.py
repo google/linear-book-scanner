@@ -262,19 +262,19 @@ def add_text_layer(pdf, jpeg, height):
       continue
     baseline = int(pattern.search(line.attrib['title']).group(1).split()[3])
     for word in line:
-      if word.attrib['class'] != 'ocr_word':
+      if word.attrib['class'] != 'ocr_word' or word.text is None:
         continue    
-      if word.text == None or len(word.text.rstrip()) == 0:
+      default_width = pdf.stringWidth(word.text.rstrip(), fontname, fontsize)
+      if default_width <= 0:
         continue
       left = int(pattern.search(word.attrib['title']).group(1).split()[0])
-      right = int(pattern.search(word.attrib['title']).group(1).split()[2])      
+      right = int(pattern.search(word.attrib['title']).group(1).split()[2])
       text = pdf.beginText()
       text.setTextRenderMode(3)  # invisible
       text.setFont(fontname, fontsize)
       width = (right - left) * 72 / dpi
-      hscale = (width / pdf.stringWidth(word.text.rstrip(), fontname, fontsize)) * 100
       text.setTextOrigin(left * 72 / dpi, height - baseline * 72 / dpi)
-      text.setHorizScale(hscale)
+      text.setHorizScale(100 * width / default_width)
       text.textLine(word.text.rstrip())
       pdf.drawText(text)
 
@@ -292,11 +292,11 @@ def save_jpeg(screen, crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
   renumber = 999999 - image_number  # switch to reading order
   a = pygame.transform.flip(crop_a, True, False)
-  p1 = write_jpeg_as_needed(screen, playground, a, image_number, renumber)
-  p2 = write_jpeg_as_needed(screen, playground, crop_b, image_number, renumber + 1)
+  p1 = write_jpeg(screen, playground, a, image_number, renumber)
+  p2 = write_jpeg(screen, playground, crop_b, image_number, renumber + 1)
   return (p1, p2)
   
-def write_jpeg_as_needed(screen, playground, img, image_number, renumber):
+def write_jpeg(screen, playground, img, image_number, renumber):
   """Write JPEG image if not already there, plus remove any old cruft"""
   if book_dimensions:
     d = book_dimensions
