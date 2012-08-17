@@ -229,6 +229,7 @@ def export_pdf(playground, screen):
   pdf = Canvas(filename, pagesize=(width, height), pageCompression=1)
   pdf.setCreator('cheesegrater')
   jpegs = glob.glob(os.path.join(playground, '*.jpg'))
+  jpegs.sort()
   counter = 0
   max = len(jpegs) - 1
   for jpeg in jpegs:
