@@ -406,7 +406,7 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
     paused = not paused
   elif event.key == pygame.K_e:
     export_pdf(playground, screen)
-  elif event.key == pygame.K_DELETE:
+  elif event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
     set_suppressions(playground, image_number)
   elif event.key == pygame.K_F11 or event.key == pygame.K_f:
     if fullscreen:
