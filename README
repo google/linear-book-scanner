@@ -11,22 +11,23 @@ $ ./scan
 === top level directory ===
 
 The top level directory contains the run script mentioned above, and a
-viewer. The viewer is GUI application for displaying and minor
+viewer. The viewer is GUI application for display and minor
 manipulation of scanned images. It lives in the top level directory
 and may be run independently of the hardware.
 
-$ sudo apt-get install python-reportlab  # recommended, provides PDF output
-$ sudo apt-get install tesseract-ocr     # optional, for searchable PDF
-$ python ./monitor.py testdata           # self test, no hardware required
+$ sudo apt-get install python-pygame     # required
+$ sudo apt-get install python-reportlab  # strongly recommended
+$ sudo apt-get install tesseract-ocr     # optional
+$ ./monitor.py testdata                  # self test, no hardware required
 
 === motor subdirectory ===
 
 This directory contains software for an mDrive microcontroller. This
 assembly language program controls image synchronization, integration
-with the break beam sensor for book safety, and of course motor
-movement.  The majority of the files are for debug purposes only, for
-example manual motor movement or diagnosis tools to help aim the break
-beam sensor during device construction. For programming reference,
+with the break beam sensor, and motor control.  The majority of the
+files are for debug purposes only, for example manual motor movement
+commands, or a sensor diagnosis program to help aim the break beam
+sensor during hardware construction. For programming reference,
 consult your favorite internet search engine for "Programming and
 Software Reference for: MCode". To program the motors, run the
 following command.
@@ -35,15 +36,15 @@ $ ./program_motors
 
 === sane subdirectory ===
 
-This directory contains patches to the SANE (Scanner Access Now Easy).
-The patch is required to allow the off the shelf hardware to run in a
-modified state; for example which paper sensors disabled or with a
-different calibration routine. You must retrieve the SANE source code,
+This directory contains patches to SANE (Scanner Access Now Easy).
+The patch is required to allow the off the shelf scanning hardware to
+run in a modified state; for example disabling paper sensors or
+changing calibration routines. You must retrieve the SANE source code,
 apply these patches, and install them on the computer attached to the
-hardware. On Ubuntu, the commands look something like this but are
-beyond the scope of this document; consult a local Linux expert as
-needed.
+hardware. These example commands are beyond the scope of this
+document; consult a local Linux expert as needed.
 
+$ sudo apt-get install pbuilder
 $ apt-get source sane-backends
 $ patch -p0 < sane-canon-dr.diff
 $ sudo pbuilder --build sane-backends-*.dsc
@@ -51,5 +52,6 @@ $ sudo dpkg -i /var/cache/pbuilder/result/sane-backends*.deb
 
 === testdata subdirectory ===
 
-The sole purpose of the this subdirectory is to help test the viewer
-program, even in the complete absence of working hardware.
+This directory contains a limited number of sample images. Their sole
+purpose is to help test and verify the viewer program, even in the
+complete absence of working hardware.
