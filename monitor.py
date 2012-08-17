@@ -309,18 +309,18 @@ def write_jpeg(screen, playground, img, image_number, renumber):
     if os.path.splitext(os.path.basename(file))[0] != stem:
       os.remove(file)
   jpeg = os.path.join(playground, stem + ".jpg")
-  hocr = os.path.join(playground, stem + ".html")
   if not os.path.exists(jpeg):
     pygame.image.save(img, jpeg)
   p = None
-  if os.path.exists(hocr):
+  hocr = os.path.join(playground, stem)
+  if os.path.exists(hocr + ".html"):
     msg = "\n\n\n   "
   else:
     msg = "\n\n\nOCR" 
     try:
-      p = subprocess.Popen(['tesseract', jpeg, os.path.splitext(jpeg)[0], 'hocr'])
+      p = subprocess.Popen(['tesseract', jpeg, hocr, 'hocr'])
     except OSError:
-      pass  # Tesseract not installed 
+      pass  # Tesseract not installed; user doesn't want OCR 
   if renumber % 2 == 0:
     render_text(screen, msg,  "upperleft")
   else:
@@ -676,7 +676,7 @@ def main(argv1):
           try:
             crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
                 render(playground, screen, paused, image_number)
-            (p1, p2) = save_jpeg(screen, crop_a, crop_b, playground, image_number)             
+            p1, p2 = save_jpeg(screen, crop_a, crop_b, playground, image_number)             
             if not paused:
               try:
                 beep.play()
