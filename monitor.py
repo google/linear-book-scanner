@@ -26,7 +26,6 @@ import cStringIO
 import base64
 import subprocess
 import re
-import tempfile
 
 paused = False           # For image inspection
 image_number = None      # Scanimage starts counting at 1
@@ -680,7 +679,8 @@ def main(argv1):
             pass
           pygame.event.clear(pygame.USEREVENT)
 
-# Derived from http://www.angelfire.com/pr/pgpf/if.html which says
+# Glyphless variation of vedaal's invisible font retrieved from
+# http://www.angelfire.com/pr/pgpf/if.html, which says:
 # 'Invisible font' is unrestricted freeware. Enjoy, Improve, Distribute freely
 def load_font():
   font = """
@@ -726,13 +726,11 @@ AATgBvAHIAbQBhAGwAAABOAG8AcgBtAGEAbAAAAE4AbwByAG0AYQBsAAAATgBvAHIAbQBhAGwAAAACA
 AAAAAAA/ycAlgAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAABAAIAAAAB//8AAgABAAAADgAAABgAAAAA
 AAIAAQABAAIAAQAEAAAAAgAAAAAAAQAAAADG1C6ZAAAAAL9MkvAAAAAAzFTgIQ==
 """
-  tmp = tempfile.NamedTemporaryFile()
-  tmp.write(base64.decodestring(font))
-  tmp.flush()
+  ttf = cStringIO.StringIO(base64.decodestring(font))
   from reportlab.pdfbase import pdfmetrics
   from reportlab.pdfbase.ttfonts import TTFont
-  pdfmetrics.registerFont(TTFont('invisible', tmp.name))
-  tmp.close()
+  pdfmetrics.registerFont(TTFont('invisible', ttf))
+
 
 if __name__ == "__main__":
   if len(sys.argv) == 1:
