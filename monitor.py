@@ -419,14 +419,23 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
   elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
     image_number -= 2
     paused = True
-  elif event.key == pygame.K_PAGEUP:
-    image_number -= 10
-    paused = True
   elif event.key == pygame.K_RIGHT or event.key == pygame.K_DOWN:
     image_number += 2
     paused = True
+  elif event.key == pygame.K_PAGEUP:
+    image_number -= 10
+    paused = True
   elif event.key == pygame.K_PAGEDOWN:
     image_number += 10
+    paused = True
+  elif event.key == pygame.K_HOME:
+    image_number = 1
+    paused = True
+  elif event.key == pygame.K_END:
+    pnms = glob.glob(os.path.join(playground, '*.pnm'))
+    pnms.sort(reverse=True)
+    candidate = int(os.path.splitext(os.path.basename(pnms[0]))[0])
+    image_number = candidate - 1 + candidate % 2  # left page
     paused = True
   elif event.key == pygame.K_s:
     filename = "screenshot-" + barcode + "-" + str(image_number) + ".jpg"
