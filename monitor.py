@@ -41,7 +41,7 @@ def blue():
   return (70, 120, 173)
 
 def clearscreen(screen):
-  """And G-d said, "Let there be blue light!"""
+  """And G-d said, 'Let there be blue light!'"""
   screen.fill(blue())
 
 def get_epsilon(screen):
@@ -52,10 +52,9 @@ def render_text(screen, msg, position):
   """Write messages to screen, such as the image number."""
   pos = [0, 0]
   font = pygame.font.SysFont('Courier', 28, bold=True)
+  color = blue()
   if image_number in suppressions:
     color = pygame.Color('red')
-  else:
-    color = blue()
   for line in msg.split("\n"):
     if len(line) > 0:
       text = font.render(line.rstrip('\r'), 1, (255, 255, 255))
@@ -263,7 +262,7 @@ def add_text_layer(pdf, jpeg, height):
     print("Parse error for %s" % hocrfile)  # Tesseract bug fixed Aug 16, 2012
     return
   except IOError:
-    return  # tesseract not installed
+    return  # Tesseract not installed; user doesn't want OCR 
   for line in hocr.findall(".//%sspan"%('')):
     if line.attrib['class'] != 'ocr_line':
       continue
@@ -353,23 +352,24 @@ def splashscreen(screen, barcode):
   render_text(screen, get_bibliography(barcode), "upperleft")
   pygame.display.update()
   render_text(screen, ("\n\n\n\n\n\n\n\n\n\n"
-                       "H,?         = help\n"
-                       "MOUSE       = crop | mosaic | zoom\n"
-                       "ARROWS      = navigation\n"
-                       "PgUp/PgDn   = navigation!\n"
+                       "H,?                  = help\n"
+                       "MOUSE                = crop | mosaic | zoom\n"
+                       "ARROWS               = navigation\n"
+                       "PgUp/PgDn/Home/End   = navigation!\n"
                        "\n"
-                       "S           = screenshot\n"
-                       "Q,ESC       = quit\n"
+                       "S                    = screenshot\n"
+                       "Q,ESC                = quit\n"
                        "\n"
-                       "E           = export to pdf\n"
-                       "DELETE      = delete\n"
-                       "F11,F       = fullscreen\n"
-                       "P,SPACE     = pause\n"
+                       "E                    = export to pdf\n"
+                       "DELETE,BACKSPACE     = delete\n"
+                       "F11,F                = fullscreen\n"
+                       "P,SPACE              = pause\n"
                        ), "upperleft")
   clearscreen(screen)
   pygame.time.wait(2000)
 
 def get_suppressions(playground):
+  """Read list of suppressed images from file"""
   global suppressions
   try:
     for line in open(os.path.join(playground, "suppressions")).readlines():
@@ -379,6 +379,7 @@ def get_suppressions(playground):
     pass
 
 def set_suppressions(playground, image_number):
+  """Toggle supression for the supplied image pair, persistantly"""    
   global suppressions
   if image_number in suppressions:
     suppressions.remove(image_number)
@@ -408,12 +409,8 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
   elif event.key == pygame.K_DELETE or event.key == pygame.K_BACKSPACE:
     set_suppressions(playground, image_number)
   elif event.key == pygame.K_F11 or event.key == pygame.K_f:
-    if fullscreen:
-      window = pygame.display.set_mode((fullsize[0] // 2, 
-                                        fullsize[1] // 2), pygame.RESIZABLE)
-    else:
-      window = pygame.display.set_mode(fullsize, pygame.FULLSCREEN)
     fullscreen = not fullscreen
+    set_pygame_window(fullsize, fullscreen)
     newscreen = pygame.display.get_surface()
     clearscreen(newscreen)
   elif event.key == pygame.K_LEFT or event.key == pygame.K_UP:
@@ -544,6 +541,12 @@ lED/5WqsTiddtVVnV3pdej1bm3OuJKFNrH+hv61knCI8GF+PVbVXG1uUUIZp4f4=
   f = cStringIO.StringIO(base64.decodestring(wav))
   return pygame.mixer.Sound(f)
 
+def set_pygame_window(size, fullscreen):
+  """Apply fullscreen or windowed user interface"""
+  if fullscreen:
+    return pygame.display.set_mode(size, pygame.FULLSCREEN)
+  pygame.display.set_mode((size[0] // 2, size[1] // 2), pygame.RESIZABLE)
+
 def main(argv1):
   """Display scanned images as they are created."""
   playground = argv1.rstrip('/')
@@ -560,11 +563,7 @@ def main(argv1):
   except:
     pass
   fullsize = (pygame.display.Info().current_w, pygame.display.Info().current_h)
-  if fullscreen:
-    window = pygame.display.set_mode(fullsize, pygame.FULLSCREEN)
-  else:
-    window = pygame.display.set_mode((fullsize[0] // 2, 
-                                      fullsize[1] // 2), pygame.RESIZABLE)
+  set_pygame_window(fullsize, fullscreen)
   screen = pygame.display.get_surface()
   pygame.display.set_caption("%s" % os.path.basename(playground))
   splashscreen(screen, barcode)
