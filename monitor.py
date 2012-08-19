@@ -218,7 +218,7 @@ def draw(screen, image_number, scale_a, scale_b, paused):
   if paused:
     render_text(screen, "\nPAUSE", "upperleft")
 
-def create_new_pdf(playground, width, height, barcode):    
+def create_new_pdf(playground, width, height):
   import reportlab.rl_config
   from reportlab.pdfgen.canvas import Canvas
   pdf = Canvas(os.path.join(playground, "book.pdf"), 
@@ -242,9 +242,8 @@ def export_pdf(playground, screen):
     msg = "Exporting PDF %d/%d" % (counter, len(jpegs) - 1)
     render_text(screen, msg, "upperright")
     counter += 1
-    number = os.path.basename(jpeg).split('-')[0]
-    number -= number % 2
-    if number in supressions:
+    number = int(os.path.basename(jpeg).split('-')[0])
+    if number in suppressions or (number - 1) in suppressions:
       continue
     pdf.drawImage(jpeg, 0, 0, width=width, height=height)
     add_text_layer(pdf, jpeg, height)
@@ -269,7 +268,9 @@ def add_text_layer(pdf, jpeg, height):
     if line.attrib['class'] != 'ocr_line':
       continue
     coords = p.search(line.attrib['title']).group(1).split()
-    base = height - float(coords[3]) * 72 / dpi
+    # Heuristic - we assume 30% of line bounding box is descenders
+    b = float(coords[3]) - 0.3 * (float(coords[3]) - float(coords[1]))
+    base = height - b * 72 / dpi
     for word in line:
       if word.attrib['class'] != 'ocr_word' or word.text is None:
         continue    
