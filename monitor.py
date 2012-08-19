@@ -450,6 +450,7 @@ def render(playground, screen, paused, image_number):
   scale_a, crop_a = process_image(h, filename_a, True)
   scale_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, scale_a, scale_b, paused)
+  pygame.display.set_caption("%d %s" % (image_number, os.path.basename(playground)))
   pygame.display.update()
   return crop_a, crop_b, scale_a, scale_b, image_number
 
@@ -556,7 +557,7 @@ def main(argv1):
     window = pygame.display.set_mode((fullsize[0] // 2, 
                                       fullsize[1] // 2), pygame.RESIZABLE)
   screen = pygame.display.get_surface()
-  pygame.display.set_caption("Barcode: %s" % barcode)
+  pygame.display.set_caption("%s" % os.path.basename(playground))
   splashscreen(screen, barcode)
   scale_a = None  # prevent crash if keypress during opening splashscreen
   image_number = 1
