@@ -218,11 +218,13 @@ def draw(screen, image_number, scale_a, scale_b, paused):
   if paused:
     render_text(screen, "\nPAUSE", "upperleft")
 
-def create_new_pdf(filename, width, height):    
+def create_new_pdf(playground, width, height, barcode):    
   import reportlab.rl_config
   from reportlab.pdfgen.canvas import Canvas
-  pdf = Canvas(filename, pagesize=(width, height), pageCompression=1)
+  pdf = Canvas(os.path.join(playground, "book.pdf"), 
+               pagesize=(width, height), pageCompression=1)
   pdf.setCreator('cheesegrater')
+  pdf.setTitle(os.path.basename(playground))
   load_font()
   return pdf
   
@@ -232,14 +234,18 @@ def export_pdf(playground, screen):
     return
   width = book_dimensions[2] * 72 / dpi
   height = (book_dimensions[1] - book_dimensions[0]) * 72 / dpi
-  pdf = create_new_pdf(os.path.join(playground, "book.pdf"), width, height)
+  pdf = create_new_pdf(playground, width, height)
   jpegs = glob.glob(os.path.join(playground, '*.jpg'))
-  jpegs.sort()
+  jpegs.sort(reverse=True)  # Switch to reading order 
   counter = 0
   for jpeg in jpegs:
     msg = "Exporting PDF %d/%d" % (counter, len(jpegs) - 1)
     render_text(screen, msg, "upperright")
     counter += 1
+    number = os.path.basename(jpeg).split('-')[0]
+    number -= number % 2
+    if number in supressions:
+      continue
     pdf.drawImage(jpeg, 0, 0, width=width, height=height)
     add_text_layer(pdf, jpeg, height)
     pdf.showPage()
@@ -283,21 +289,20 @@ def add_text_layer(pdf, jpeg, height):
 
 def save_jpeg(screen, crop_a, crop_b, playground, image_number):
   """Save cropped images in reading order."""
-  renumber = 999999 - image_number  # switch to reading oslarder
   a = pygame.transform.flip(crop_a, True, False)
-  p1 = write_jpeg(screen, playground, a, image_number, renumber)
-  p2 = write_jpeg(screen, playground, crop_b, image_number, renumber + 1)
+  p1 = write_jpeg(screen, playground, a, image_number)
+  p2 = write_jpeg(screen, playground, crop_b, image_number + 1)
   return (p1, p2)
   
-def write_jpeg(screen, playground, img, image_number, renumber):
+def write_jpeg(screen, playground, img, number):
   """Write JPEG image if not already there, plus remove any old cruft"""
   if book_dimensions:
     d = book_dimensions
-    stem = "%06d-%s-%s-%s" % (renumber, d[0], d[1], d[2])
+    stem = "%06d-%s-%s-%s" % (number, d[0], d[1], d[2])
   else:
-    stem = "%06d-uncropped" % renumber
-  hocrs = glob.glob(os.path.join(playground, '%06d-*.html' % renumber))
-  jpegs = glob.glob(os.path.join(playground, '%06d-*.jpg' % renumber))
+    return
+  hocrs = glob.glob(os.path.join(playground, '%06d-*.html' % number))
+  jpegs = glob.glob(os.path.join(playground, '%06d-*.jpg' % number))
   for file in hocrs + jpegs:
     if os.path.splitext(os.path.basename(file))[0] != stem:
       os.remove(file)
@@ -314,7 +319,7 @@ def write_jpeg(screen, playground, img, image_number, renumber):
       p = subprocess.Popen(['tesseract', jpeg, hocr, 'hocr'])
     except OSError:
       pass  # Tesseract not installed; user doesn't want OCR 
-  if renumber % 2 == 0:
+  if number % 2 == 0:
     render_text(screen, msg,  "upperleft")
   else:
     render_text(screen, msg,  "upperright")
