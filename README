@@ -10,17 +10,16 @@ $ ./scan
 
 === top level directory ===
 
-The top level directory contains the run script mentioned above, and a
-viewer. The viewer is GUI application is optional, but highly
-recommended for display, manipulation, and export of scanned
-images. It lives in the top level directory and may be run
-independently of the hardware. The viewer has significantly higher
-performance on systems with solid state storage.
+The top level directory contains everything needed for scanning.
+Besides the run script, it contains a graphical user interface for
+display, manipulation, and export of scanned images. The viewer lives
+may be run independently of the hardware, and performs best on systems
+with solid state storage.
 
 $ sudo apt-get install python-pygame     # required for viewer
 $ sudo apt-get install python-reportlab  # required for PDF output
 $ sudo apt-get install tesseract-ocr     # required for searchable PDF output
-$ ./monitor.py testdata                  # self test, no hardware required
+$ ./viewer.py testdata                   # self test, no hardware required
 
 === motor subdirectory ===
 

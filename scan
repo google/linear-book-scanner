@@ -45,6 +45,6 @@ scan() {
 HERE=`pwd`
 check_hardware
 get_barcode
-$HERE/monitor.py $DIR &
+$HERE/viewer.py $DIR &
 scan 
 
