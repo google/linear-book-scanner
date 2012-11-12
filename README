@@ -50,7 +50,7 @@ $ apt-get source sane-backends
 $ patch -p0 < sane-canon-dr.diff
 $ sudo pbuilder create
 $ sudo pbuilder build sane-backends*.dsc
-$ sudo dpkg -i /var/cache/pbuilder/result/libsane-common*.de
+$ sudo dpkg -i /var/cache/pbuilder/result/libsane-common*.deb
 $ sudo dpkg -i /var/cache/pbuilder/result/libsane_*.deb
 $ sudo dpkg -i /var/cache/pbuilder/result/sane-utils*.deb
 
