@@ -48,8 +48,11 @@ document; consult a local Linux expert as needed.
 $ sudo apt-get install pbuilder
 $ apt-get source sane-backends
 $ patch -p0 < sane-canon-dr.diff
-$ sudo pbuilder --build sane-backends-*.dsc
-$ sudo dpkg -i /var/cache/pbuilder/result/sane-backends*.deb
+$ sudo pbuilder create
+$ sudo pbuilder build sane-backends*.dsc
+$ sudo dpkg -i /var/cache/pbuilder/result/libsane-common*.de
+$ sudo dpkg -i /var/cache/pbuilder/result/libsane_*.deb
+$ sudo dpkg -i /var/cache/pbuilder/result/sane-utils*.deb
 
 === testdata subdirectory ===
 
