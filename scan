@@ -15,14 +15,14 @@
 # limitations under the License.
 
 check_hardware() {
-  scanimage -l > /dev/null || exit 1
+  scanimage -L > /dev/null || exit 1
   if [ `uname` = "Linux" ]; then
     SERIAL_DEVICE=/dev/ttyUSB0
     stty -F $SERIAL_DEVICE 9600
   else
     SERIAL_DEVICE=/dev/cu.usbserial-FTC8534M
   fi
-  [ -f $SERIAL_DEVICE ] || exit 1
+  [ -e $SERIAL_DEVICE ] || exit 1
 }
 
 get_barcode() {
