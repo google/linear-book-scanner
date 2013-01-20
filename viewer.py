@@ -68,12 +68,12 @@ def render_text(screen, msg, position):
     pos[1] += 30
     color = blue()
 
-def read_ppm_header(fp):
+def read_ppm_header(fp, filename):
   """Read dimensions and headersize from a PPM file."""
   headersize = 0
   magic_number = fp.readline()
   if magic_number != "P6\n":
-    raise TypeError("Hey! Not a ppm image file.")
+    raise TypeError("Hey! Not a ppm image file: %s" % filename)
   headersize += len(magic_number)
   comment = fp.readline()
   if comment[0] == "#":
@@ -120,7 +120,7 @@ def process_image(h, filename, is_left):
   """Return both screen resolution and scan resolution images."""
   kSaddleHeight = 3600  # scan pixels
   f = open(filename, "r+b")
-  dimensions, headersize = read_ppm_header(f)
+  dimensions, headersize = read_ppm_header(f, filename)
   map = mmap.mmap(f.fileno(), 0)
   image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
   unused, y = crop_to_full_coord((0, 0), is_left)
@@ -500,7 +500,7 @@ def render_mosaic(screen, playground, click, scale_size, crop_size,
       break
     f = open(filename, "r+b")
     map = mmap.mmap(f.fileno(), 0)
-    dimensions, headersize = read_ppm_header(f)
+    dimensions, headersize = read_ppm_header(f, filename)
     image = pygame.image.frombuffer(buffer(map, headersize), dimensions, 'RGB')
     src = full_coord[0] - 3 * size[0] // 2, full_coord[1] - 3 * size[1] // 2
     rect = pygame.Rect(src, (size[0] * 3, size[1] * 3))
