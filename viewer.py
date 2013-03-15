@@ -158,33 +158,34 @@ def get_book_dimensions(playground):
   except IOError:
     pass
 
+def unset_book_dimensions(playground):
+  global book_dimensions
+  if book_dimensions:
+    book_dimensions = None
+    os.unlink(os.path.join(playground, "book_dimensions"))
+
 def set_book_dimensions(click, epsilon, crop_size, scale_size, playground):
   """User has dragged mouse to specify book position in image."""
   global book_dimensions
   down = list(click[0])
   up = list(click[1])
-  filename = os.path.join(playground, "book_dimensions")
   min_book_dimension = 30  # screen pixels
-  if book_dimensions == None:
-    w2 = pygame.display.Info().current_w // 2
-    down[0] = abs(w2 - down[0]) + w2
-    up[0] =  abs(w2 - up[0]) + w2
-    if min(abs(down[1] - up[1]), abs(up[0] - w2)) < min_book_dimension:
-      return
-    side = max(down[0], up[0]) - w2 - epsilon
-    top = min(down[1], up[1])
-    bottom = max(down[1], up[1])
-    side = min(side, scale_size[0])
-    side = side * crop_size[0] // scale_size[0]
-    top = top * crop_size[1] // scale_size[1]
-    bottom = bottom * crop_size[1] // scale_size[1]
-    book_dimensions = (top, bottom, side)
-    f = open(filename, "wb")
-    f.write("#top,bottom,side\n%s,%s,%s\n" % book_dimensions)
-    f.close()
-  else:
-    book_dimensions = None
-    os.unlink(filename)
+  w2 = pygame.display.Info().current_w // 2
+  down[0] = abs(w2 - down[0]) + w2
+  up[0] =  abs(w2 - up[0]) + w2
+  if min(abs(down[1] - up[1]), abs(up[0] - w2)) < min_book_dimension:
+    return
+  side = max(down[0], up[0]) - w2 - epsilon
+  top = min(down[1], up[1])
+  bottom = max(down[1], up[1])
+  side = min(side, scale_size[0])
+  side = side * crop_size[0] // scale_size[0]
+  top = top * crop_size[1] // scale_size[1]
+  bottom = bottom * crop_size[1] // scale_size[1]
+  book_dimensions = (top, bottom, side)
+  f = open(os.path.join(playground, "book_dimensions"), "wb")
+  f.write("#top,bottom,side\n%s,%s,%s\n" % book_dimensions)
+  f.close()
 
 def zoom(screen, click, scale_a, scale_b, crop_a, crop_b):
   """Given a mouseclick, zoom in on the region."""
@@ -220,13 +221,13 @@ def draw(screen, image_number, scale_a, scale_b, paused):
 def create_new_pdf(playground, width, height):
   import reportlab.rl_config
   from reportlab.pdfgen.canvas import Canvas
-  pdf = Canvas(os.path.join(playground, "book.pdf"), 
+  pdf = Canvas(os.path.join(playground, "book.pdf"),
                pagesize=(width, height), pageCompression=1)
   pdf.setCreator('cheesegrater')
   pdf.setTitle(os.path.basename(playground))
   load_font()
   return pdf
-  
+
 def export_pdf(playground, screen):
   """Create a PDF file fit for human consumption"""
   if book_dimensions == None:
@@ -235,7 +236,7 @@ def export_pdf(playground, screen):
   height = (book_dimensions[1] - book_dimensions[0]) * 72 / dpi
   pdf = create_new_pdf(playground, width, height)
   jpegs = glob.glob(os.path.join(playground, '*.jpg'))
-  jpegs.sort(reverse=True)  # Switch to reading order 
+  jpegs.sort(reverse=True)  # Switch to reading order
   counter = 0
   for jpeg in jpegs:
     msg = "Exporting PDF %d/%d" % (counter, len(jpegs) - 1)
@@ -248,12 +249,12 @@ def export_pdf(playground, screen):
     add_text_layer(pdf, jpeg, height)
     pdf.showPage()
   pdf.save()
-  render_text(screen, " " * len(msg), "upperright")  
+  render_text(screen, " " * len(msg), "upperright")
 
 def add_text_layer(pdf, jpeg, height):
   """Draw an invisible text layer for OCR data"""
   from xml.etree.ElementTree import ElementTree, ParseError
-  p = re.compile('bbox((\s+\d+){4})')      
+  p = re.compile('bbox((\s+\d+){4})')
   hocrfile = os.path.splitext(jpeg)[0] + ".html"
   hocr = ElementTree()
   try:
@@ -262,7 +263,7 @@ def add_text_layer(pdf, jpeg, height):
     print("Parse error for %s" % hocrfile)  # Tesseract bug fixed Aug 16, 2012
     return
   except IOError:
-    return  # Tesseract not installed; user doesn't want OCR 
+    return  # Tesseract not installed; user doesn't want OCR
   for line in hocr.findall(".//%sspan"%('')):
     if line.attrib['class'] != 'ocr_line':
       continue
@@ -272,13 +273,13 @@ def add_text_layer(pdf, jpeg, height):
     base = height - b * 72 / dpi
     for word in line:
       if word.attrib['class'] != 'ocr_word' or word.text is None:
-        continue    
+        continue
       default_width = pdf.stringWidth(word.text.strip(), 'invisible', 8)
       if default_width <= 0:
         continue
       coords = p.search(word.attrib['title']).group(1).split()
       left = float(coords[0]) * 72 / dpi
-      right = float(coords[2]) * 72 / dpi      
+      right = float(coords[2]) * 72 / dpi
       text = pdf.beginText()
       text.setTextRenderMode(3)  # double invisible
       text.setFont('invisible', 8)
@@ -293,7 +294,7 @@ def save_jpeg(screen, crop_a, crop_b, playground, image_number):
   p1 = write_jpeg(screen, playground, a, image_number)
   p2 = write_jpeg(screen, playground, crop_b, image_number + 1)
   return (p1, p2)
-  
+
 def write_jpeg(screen, playground, img, number):
   """Write JPEG image if not already there, plus remove any old cruft"""
   if book_dimensions:
@@ -314,17 +315,17 @@ def write_jpeg(screen, playground, img, number):
   if os.path.exists(hocr + ".html"):
     msg = "\n\n\n   "
   else:
-    msg = "\n\n\nOCR" 
+    msg = "\n\n\nOCR"
     try:
       p = subprocess.Popen(['tesseract', jpeg, hocr, 'hocr'])
     except OSError:
-      pass  # Tesseract not installed; user doesn't want OCR 
+      pass  # Tesseract not installed; user doesn't want OCR
   if number % 2 == 0:
     render_text(screen, msg,  "upperleft")
   else:
     render_text(screen, msg,  "upperright")
   return p
-    
+
 def get_bibliography(barcode):
   """Hit up Google Books for bibliographic data. Thanks, Leonid."""
   if barcode[0:3] == "978":
@@ -362,6 +363,7 @@ def splashscreen(screen, barcode):
                        "\n"
                        "E                    = export to pdf\n"
                        "DELETE,BACKSPACE     = delete\n"
+                       "U                    = uncrop\n"
                        "F11,F                = fullscreen\n"
                        "P,SPACE              = pause\n"
                        ), "upperleft")
@@ -379,7 +381,7 @@ def get_suppressions(playground):
     pass
 
 def set_suppressions(playground, image_number):
-  """Toggle supression for the supplied image pair, persistantly"""    
+  """Toggle supression for the supplied image pair, persistantly"""
   global suppressions
   if image_number in suppressions:
     suppressions.remove(image_number)
@@ -434,6 +436,8 @@ def handle_key_event(screen, event, playground, barcode, mosaic_click,
     candidate = int(os.path.splitext(os.path.basename(pnms[0]))[0])
     image_number = candidate - 1 + candidate % 2  # left page
     paused = True
+  elif event.key == pygame.K_u:
+    unset_book_dimensions(playground)
   elif event.key == pygame.K_s:
     filename = "screenshot-" + barcode + "-" + str(image_number) + ".jpg"
     pygame.image.save(screen, filename);
@@ -456,7 +460,8 @@ def render(playground, screen, paused, image_number):
   scale_a, crop_a = process_image(h, filename_a, True)
   scale_b, crop_b = process_image(h, filename_b, False)
   draw(screen, image_number, scale_a, scale_b, paused)
-  pygame.display.set_caption("%d %s" % (image_number, os.path.basename(playground)))
+  pygame.display.set_caption("%d %s" %
+                             (image_number, os.path.basename(playground)))
   pygame.display.update()
   return crop_a, crop_b, scale_a, scale_b, image_number
 
@@ -558,7 +563,7 @@ def main(argv1):
   last_drawn_image_number = 0
   get_book_dimensions(playground)
   get_suppressions(playground)
-  try: 
+  try:
     beep = get_beep()
   except:
     pass
@@ -582,7 +587,7 @@ def main(argv1):
         busy = True
         pygame.event.clear(pygame.USEREVENT)
       if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-        if mosaic_click:
+        if mosaic_click or book_dimensions:
           continue
         leftdownclick = event.pos
         oldscreen = screen.copy()
@@ -607,7 +612,7 @@ def main(argv1):
           navigate_mosaic(playground, screen, event.pos)
           last_drawn_image_number = None
           mosaic_click = None
-        else:
+        elif not book_dimensions:
           oldscreen = None
           leftclick = (leftdownclick, event.pos)
           set_book_dimensions(leftclick, get_epsilon(screen), crop_a.get_size(),
@@ -684,7 +689,7 @@ def main(argv1):
           try:
             crop_a, crop_b, scale_a, scale_b, last_drawn_image_number = \
                 render(playground, screen, paused, image_number)
-            p1, p2 = save_jpeg(screen, crop_a, crop_b, playground, image_number)             
+            p1, p2 = save_jpeg(screen, crop_a, crop_b, playground, image_number)
             if not paused:
               try:
                 beep.play()
@@ -752,4 +757,3 @@ if __name__ == "__main__":
     print("Usage: %s <imgdir>\n" % os.path.basename(sys.argv[0]))
   else:
     main(sys.argv[1])
-
